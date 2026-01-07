@@ -22,9 +22,19 @@ COPY /vendor/ $GOPATH/src/github.com/macula-io/macula-os/vendor/
 WORKDIR $GOPATH/src/github.com/macula-io/macula-os
 RUN gobuild -mod=vendor -o /output/maculaos
 
+FROM gobuild as firstboot
+ARG VERSION
+COPY go.mod $GOPATH/src/github.com/macula-io/macula-os/
+COPY go.sum $GOPATH/src/github.com/macula-io/macula-os/
+COPY /cmd/ $GOPATH/src/github.com/macula-io/macula-os/cmd/
+COPY /vendor/ $GOPATH/src/github.com/macula-io/macula-os/vendor/
+WORKDIR $GOPATH/src/github.com/macula-io/macula-os
+RUN gobuild -mod=vendor -o /output/macula-firstboot ./cmd/macula-firstboot
+
 FROM gobuild
 COPY --from=linuxkit /output/ /output/
 COPY --from=macula /output/ /output/
+COPY --from=firstboot /output/ /output/
 WORKDIR /output
 RUN git clone --branch v0.7.0 https://github.com/ahmetb/kubectx.git \
  && chmod -v +x kubectx/kubectx kubectx/kubens

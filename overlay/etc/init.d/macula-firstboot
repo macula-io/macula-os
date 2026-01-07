@@ -1,0 +1,69 @@
+#!/sbin/openrc-run
+# MaculaOS First-Boot Wizard Service
+# Runs on first boot to pair the node with Macula Portal
+
+name="macula-firstboot"
+description="MaculaOS First-Boot Wizard"
+
+command="/sbin/macula-firstboot"
+command_args=""
+command_background="yes"
+pidfile="/run/${RC_SVCNAME}.pid"
+output_log="/var/log/macula-firstboot.log"
+error_log="/var/log/macula-firstboot.log"
+
+CONFIGURED_FLAG="/var/lib/macula/.configured"
+
+depend() {
+    need net
+    after connman dbus avahi-daemon
+    before sshd
+}
+
+start_pre() {
+    # Check if already configured
+    if [ -f "${CONFIGURED_FLAG}" ]; then
+        einfo "System already configured, skipping firstboot wizard"
+        return 1
+    fi
+
+    # Ensure log directory exists
+    checkpath --directory --owner root:root --mode 0755 /var/log
+
+    # Ensure macula directory exists
+    checkpath --directory --owner root:root --mode 0755 /var/lib/macula
+
+    einfo "Starting first-boot wizard..."
+    einfo "Visit http://$(hostname).local to complete setup"
+}
+
+start() {
+    ebegin "Starting ${name}"
+    start-stop-daemon --start --background \
+        --make-pidfile --pidfile "${pidfile}" \
+        --stdout "${output_log}" \
+        --stderr "${error_log}" \
+        --exec "${command}" -- ${command_args}
+    eend $?
+}
+
+stop() {
+    ebegin "Stopping ${name}"
+    start-stop-daemon --stop --pidfile "${pidfile}"
+    eend $?
+}
+
+status() {
+    if [ -f "${CONFIGURED_FLAG}" ]; then
+        einfo "System is configured"
+        return 0
+    fi
+
+    if [ -f "${pidfile}" ] && kill -0 $(cat "${pidfile}") 2>/dev/null; then
+        einfo "${name} is running"
+        return 0
+    fi
+
+    einfo "${name} is not running, system not configured"
+    return 3
+}

@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MaculaOS Setup - {{.Hostname}}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #e4e4e4;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 480px;
+            width: 90%;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        .logo {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            background: linear-gradient(90deg, #00d4ff, #7b2cbf);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            color: #888;
+            margin-bottom: 30px;
+            font-size: 0.9rem;
+        }
+
+        .hostname {
+            font-family: monospace;
+            background: rgba(0, 212, 255, 0.1);
+            padding: 2px 8px;
+            border-radius: 4px;
+            color: #00d4ff;
+        }
+
+        .qr-container {
+            background: white;
+            padding: 15px;
+            border-radius: 12px;
+            display: inline-block;
+            margin: 20px 0;
+        }
+
+        .qr-container img {
+            display: block;
+            width: 200px;
+            height: 200px;
+        }
+
+        .pairing-code {
+            font-size: 2rem;
+            font-family: monospace;
+            letter-spacing: 4px;
+            margin: 20px 0;
+            color: #00d4ff;
+            font-weight: 600;
+        }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            margin: 25px 0;
+            color: #666;
+            font-size: 0.85rem;
+        }
+
+        .divider::before,
+        .divider::after {
+            content: '';
+            flex: 1;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .divider span {
+            padding: 0 15px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #aaa;
+            font-size: 0.85rem;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 14px 16px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            color: #fff;
+            font-size: 1.2rem;
+            font-family: monospace;
+            letter-spacing: 3px;
+            text-align: center;
+            text-transform: uppercase;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #00d4ff;
+            box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.1);
+        }
+
+        .form-group input::placeholder {
+            color: #555;
+            letter-spacing: 2px;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 14px 20px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(90deg, #00d4ff, #7b2cbf);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 212, 255, 0.3);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .status {
+            margin-top: 20px;
+            padding: 12px;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .status.success {
+            background: rgba(0, 200, 83, 0.1);
+            border: 1px solid rgba(0, 200, 83, 0.3);
+            color: #00c853;
+            display: block;
+        }
+
+        .status.error {
+            background: rgba(255, 82, 82, 0.1);
+            border: 1px solid rgba(255, 82, 82, 0.3);
+            color: #ff5252;
+            display: block;
+        }
+
+        .help-text {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            color: #666;
+            font-size: 0.8rem;
+        }
+
+        .help-text a {
+            color: #00d4ff;
+            text-decoration: none;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s linear infinite;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .step-indicator {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 25px;
+        }
+
+        .step {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .step.active {
+            background: linear-gradient(90deg, #00d4ff, #7b2cbf);
+        }
+
+        .step.done {
+            background: #00c853;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">MaculaOS</div>
+        <div class="subtitle">First-time setup for <span class="hostname">{{.Hostname}}</span></div>
+
+        <div class="step-indicator">
+            <div class="step active" id="step1">1</div>
+            <div class="step" id="step2">2</div>
+            <div class="step" id="step3">3</div>
+        </div>
+
+        <div class="qr-container">
+            <img src="/qr.png" alt="QR Code for {{.LocalURL}}">
+        </div>
+
+        <p style="color: #888; margin-bottom: 15px;">Scan to visit this page on your phone</p>
+
+        <div class="pairing-code">{{.PairingCode}}</div>
+        <p style="color: #666; font-size: 0.85rem;">Your node pairing code</p>
+
+        <div class="divider"><span>Enter Portal code to pair</span></div>
+
+        <form id="pairForm">
+            <div class="form-group">
+                <label for="portalCode">Portal Pairing Code</label>
+                <input type="text" id="portalCode" name="portalCode"
+                       placeholder="ABC-123" maxlength="7" autocomplete="off"
+                       pattern="[A-Za-z0-9]{3}-[A-Za-z0-9]{3}">
+            </div>
+
+            <button type="submit" class="btn btn-primary" id="submitBtn">
+                Complete Pairing
+            </button>
+        </form>
+
+        <div class="status" id="status"></div>
+
+        <div class="help-text">
+            <p>Don't have a Portal account? <a href="{{.PortalURL}}" target="_blank">Create one at macula.io</a></p>
+            <p style="margin-top: 8px;">Go to Settings &rarr; Pair Console to get your code.</p>
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById('pairForm');
+        const input = document.getElementById('portalCode');
+        const btn = document.getElementById('submitBtn');
+        const status = document.getElementById('status');
+        const steps = [
+            document.getElementById('step1'),
+            document.getElementById('step2'),
+            document.getElementById('step3')
+        ];
+
+        // Auto-format input as ABC-123
+        input.addEventListener('input', function(e) {
+            let value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+            if (value.length > 3) {
+                value = value.slice(0, 3) + '-' + value.slice(3, 6);
+            }
+            e.target.value = value;
+        });
+
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const code = input.value.trim();
+            if (!code || code.length < 7) {
+                showStatus('Please enter a valid 6-character code (e.g., ABC-123)', 'error');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span>Pairing...';
+            status.className = 'status';
+            status.style.display = 'none';
+
+            steps[1].classList.add('active');
+
+            try {
+                const response = await fetch('/pair', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ portal_code: code })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    steps[1].classList.remove('active');
+                    steps[1].classList.add('done');
+                    steps[2].classList.add('active');
+                    showStatus(data.message + ' Organization: ' + data.org_name, 'success');
+                    btn.innerHTML = 'Rebooting...';
+                } else {
+                    throw new Error(data.error || 'Pairing failed');
+                }
+            } catch (err) {
+                steps[1].classList.remove('active');
+                showStatus(err.message, 'error');
+                btn.disabled = false;
+                btn.innerHTML = 'Complete Pairing';
+            }
+        });
+
+        function showStatus(message, type) {
+            status.textContent = message;
+            status.className = 'status ' + type;
+        }
+    </script>
+</body>
+</html>

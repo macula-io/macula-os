@@ -1,6 +1,6 @@
 # MaculaOS - Custom Linux Distribution Plan
 
-**Status:** In Progress (Phase 2 - Nearly Complete)
+**Status:** In Progress (Phase 3 - First-Boot Wizard Complete)
 **Created:** 2026-01-07
 **Repository:** `macula-io/macula-os`
 **Based on:** k3OS (rancher/k3os fork)
@@ -455,19 +455,40 @@ with arm64 naming but the binaries are still amd64 (base images pull host arch).
 
 **Goal:** Zero-touch setup experience
 
-- [ ] Create firstboot Go binary
-- [ ] Implement pairing flow UI
-- [ ] Generate QR codes with pairing URL
-- [ ] Exchange codes with Portal API
-- [ ] Store credentials securely
-- [ ] Configure Console on success
-- [ ] Create init script for firstboot
-- [ ] Test full pairing flow
+- [x] Create firstboot Go binary (2026-01-07)
+  - `cmd/macula-firstboot/main.go` - HTTP server with pairing flow
+  - `cmd/macula-firstboot/templates/index.html` - Responsive web UI
+  - `cmd/macula-firstboot/static/style.css` - Placeholder for static assets
+- [x] Implement pairing flow UI (2026-01-07)
+  - Modern dark theme with gradient accents
+  - Step indicator showing pairing progress
+  - QR code display for local URL
+  - Portal code input with auto-formatting
+- [x] Generate QR codes with pairing URL (2026-01-07)
+  - Using skip2/go-qrcode library
+  - QR served at /qr.png endpoint
+  - Also displayed in console via ASCII
+- [x] Exchange codes with Portal API (2026-01-07)
+  - POST to /api/console/pair
+  - Returns refresh token, user name, org identity
+- [x] Store credentials securely (2026-01-07)
+  - Stored in /var/lib/macula/credentials/portal.json
+  - Directory permissions 0700, file permissions 0600
+- [ ] Configure Console on success (requires Console integration)
+- [x] Create init script for firstboot (2026-01-07)
+  - `overlay/etc/init.d/macula-firstboot` - OpenRC service
+  - Added to default runlevel in boot script
+- [ ] Test full pairing flow (requires Portal and built ISO)
 
-**Files to create:**
+**Files created:**
 - `cmd/macula-firstboot/main.go`
-- `overlay/opt/macula/firstboot/`
+- `cmd/macula-firstboot/templates/index.html`
+- `cmd/macula-firstboot/static/style.css`
 - `overlay/etc/init.d/macula-firstboot`
+
+**Build system updated:**
+- `images/20-progs/Dockerfile` - Added firstboot build stage
+- `images/20-rootfs/Dockerfile` - Copy firstboot binary to /sbin/
 
 ### Phase 4: Multi-Arch Builds & Testing (Week 4-5)
 
