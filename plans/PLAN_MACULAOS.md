@@ -350,16 +350,30 @@ spec:
 - [x] Complete k3os -> MaculaOS rebranding (Go code, scripts, Dockerfiles)
 - [x] Verify amd64 build completes (2026-01-07)
 - [ ] Verify arm64 build completes
-- [~] Test boot in QEMU (partial - see known issues below)
+- [x] Test boot in QEMU (2026-01-07) - PASSES
 - [ ] Document build process
 
 **QEMU Boot Test Results (2026-01-07):**
-- Kernel loads successfully
-- Init (maculaos binary) starts
-- FAILS at loop device creation: `/dev/loop-control: no such device`
-- **Root cause**: initrd has no `modprobe`/`kmod` - the Go code calls `modprobe loop` but the binary doesn't exist
-- **Fix needed**: Add kmod to initrd OR use kernel with CONFIG_BLK_DEV_LOOP=y (built-in)
+- ✅ Kernel loads successfully
+- ✅ Init (maculaos binary) starts
+- ✅ Loop device created, squashfs root mounted
+- ✅ OpenRC starts all services (udev, dbus, connman, sshd, etc.)
+- ✅ Login prompt displayed
 - Memory requirement: 4GB minimum for 723MB initrd
+
+**kmod Fix (2026-01-07):**
+- Added kmod binary and required libraries to initrd:
+  - `/lib/libz.so.1` (from `/lib/`)
+  - `/lib/liblzma.so.5` (from `/usr/lib/`)
+  - `/lib/libzstd.so.1` (from `/usr/lib/`)
+  - `/lib/libcrypto.so.3` (from `/lib/`)
+  - `/lib/ld-musl-x86_64.so.1` (dynamic linker)
+- Modified Go code to try multiple paths for modprobe (`/sbin/modprobe`, `/bin/modprobe`, `modprobe`)
+- Committed in `58cf948` - "fix: add kmod and libraries to initrd for loop device support"
+
+**Minor issues noted:**
+- `/usr/libexec/k3os/k3s-install.sh: no such file or directory` - k3os path not yet rebranded
+- Welcome message still says "k3OS" in some places (cosmetic)
 
 **Rebranding completed (2026-01-07):**
 - Go module: `github.com/rancher/k3os` → `github.com/macula-io/macula-os`
