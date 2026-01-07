@@ -3,7 +3,7 @@
 setup_motd()
 {
     echo >> /etc/motd
-    echo 'You can configure this system or install to disk using "sudo k3os install"' >> /etc/motd
+    echo 'You can configure this system or install to disk using "sudo maculaos install"' >> /etc/motd
 }
 
 setup_base()

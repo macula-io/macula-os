@@ -11,9 +11,9 @@ fi
 PROC=$(uname -m)
 
 # Take a parameter of the version number (i.e. v0.4.0) if it is given, otherwise use latest
-if [ -z $K3OS_VERSION ]
+if [ -z $MACULA_VERSION ]
 then
-	K3OS_VERSION=$(curl -sL api.github.com/repos/rancher/k3os/releases/latest | jq .tag_name -r)
+	MACULA_VERSION=$(curl -sL api.github.com/repos/macula-io/macula-os/releases/latest | jq .tag_name -r)
 fi
 
 if [ $PROC == "x86_64" ]
@@ -30,11 +30,11 @@ else
 	exit 1
 fi
 
-echo "Upgrading k3os to ${K3OS_VERSION}"
+echo "Upgrading MaculaOS to ${MACULA_VERSION}"
 
-cd /k3os/system
+cd /macula/system
 mount -o remount,rw .
-curl -fsSL "https://github.com/rancher/k3os/releases/download/${K3OS_VERSION}/k3os-rootfs-${ARCH}.tar.gz" | tar xz --strip-components=3
+curl -fsSL "https://github.com/macula-io/macula-os/releases/download/${MACULA_VERSION}/macula-rootfs-${ARCH}.tar.gz" | tar xz --strip-components=3
 sync
 
 echo "Upgrade complete! Please reboot."

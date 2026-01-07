@@ -1,6 +1,6 @@
 ARG REPO
 ARG TAG
-FROM ${REPO}/k3os-base:${TAG}
+FROM ${REPO}/macula-base:${TAG}
 
 ARG ARCH
 ENV ARCH ${ARCH}

@@ -1,0 +1,21 @@
+#!/bin/bash
+
+setup_ssh()
+{
+    if [ ! -e /var/lib/macula/ssh ]; then
+        mkdir -p /var/lib/macula
+        cp -rf /etc/ssh /var/lib/macula/ssh
+    fi
+    rm -rf /etc/ssh
+    ln -s /var/lib/macula/ssh /etc/ssh
+}
+
+setup_rancher_node()
+{
+    mkdir -p /etc/rancher
+    mkdir -p /var/lib/macula/node
+    ln -s /var/lib/macula/node /etc/rancher/
+}
+
+setup_ssh
+setup_rancher_node

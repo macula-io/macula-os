@@ -1,24 +1,24 @@
 ARG REPO
 ARG TAG
-FROM ${REPO}/k3os-tar:${TAG} as tar
+FROM ${REPO}/macula-tar:${TAG} as tar
 
 ARG REPO
 ARG TAG
-FROM ${REPO}/k3os-iso:${TAG} as iso
+FROM ${REPO}/macula-iso:${TAG} as iso
 
 ARG REPO
 ARG TAG
-FROM ${REPO}/k3os-kernel:${TAG} as kernel
+FROM ${REPO}/macula-kernel:${TAG} as kernel
 
 ARG REPO
 ARG TAG
-FROM ${REPO}/k3os-base:${TAG}
+FROM ${REPO}/macula-base:${TAG}
 ARG ARCH
 
-COPY --from=kernel /output/vmlinuz /output/k3os-vmlinuz-${ARCH}
-COPY --from=kernel /output/initrd /output/k3os-initrd-${ARCH}
-COPY --from=kernel /output/kernel.squashfs /output/k3os-kernel-${ARCH}.squashfs
-COPY --from=kernel /output/version /output/k3os-kernel-version-${ARCH}
-COPY --from=iso /output/k3os.iso /output/k3os-${ARCH}.iso
-COPY --from=tar /output/userspace.tar /output/k3os-rootfs-${ARCH}.tar
-RUN gzip /output/k3os-rootfs-${ARCH}.tar
+COPY --from=kernel /output/vmlinuz /output/maculaos-vmlinuz-${ARCH}
+COPY --from=kernel /output/initrd /output/maculaos-initrd-${ARCH}
+COPY --from=kernel /output/kernel.squashfs /output/macula-kernel-${ARCH}.squashfs
+COPY --from=kernel /output/version /output/macula-kernel-version-${ARCH}
+COPY --from=iso /output/maculaos.iso /output/maculaos-${ARCH}.iso
+COPY --from=tar /output/userspace.tar /output/macula-rootfs-${ARCH}.tar
+RUN gzip /output/macula-rootfs-${ARCH}.tar

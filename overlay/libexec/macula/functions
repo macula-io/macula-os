@@ -1,0 +1,81 @@
+#!/bin/bash
+set -e
+
+export SCRIPTS=/usr/libexec/macula
+export MACULA_SYSTEM=/.base/macula/system
+
+reinit_debug()
+{
+    if [ "$MACULA_DEBUG" = "true" ]; then
+        set -x
+        return 0
+    fi
+
+    if [ -e /run/macula/debug ]; then
+        set -x
+        return 0
+    fi
+
+    if [ -e /proc/cmdline ]; then
+        for x in $(cat /proc/cmdline); do
+            case $x in
+                macula.debug*)
+                    export MACULA_DEBUG=true
+                    mkdir -p /run/macula
+                    echo debug > /run/macula/debug || true
+                    ;;
+            esac
+        done
+    fi
+
+    if [ "$MACULA_DEBUG" = "true" ]; then
+        set -x
+    fi
+}
+
+setup_kernel()
+{
+    KERNEL=${MACULA_SYSTEM}/kernel/$(uname -r)/kernel.squashfs
+    if [ ! -e ${KERNEL} ]; then
+        return 0
+    fi
+
+    mkdir -p /run/macula/kernel
+    mount -t squashfs $KERNEL /run/macula/kernel
+
+    mount --bind /run/macula/kernel/lib/modules /lib/modules
+    mount --bind /run/macula/kernel/lib/firmware /lib/firmware
+    mount --bind /run/macula/kernel/headers /usr/src
+
+    umount /run/macula/kernel
+}
+
+perr()
+{
+    echo "[ERROR]" "$@" 1>&2
+}
+
+pfatal()
+{
+    echo "[FATAL]" "$@" 1>&2
+    exit 1
+}
+
+pinfo()
+{
+    echo " * " "$@"
+}
+
+cleanup()
+{
+    rm -rf /run/macula
+    unset SCRIPTS
+    unset MACULA_SYSTEM
+    if [ -n "$MACULA_MODE" ]; then
+        mkdir -p /run/macula
+        echo "$MACULA_MODE" > /run/macula/mode
+    fi
+    unset MACULA_MODE
+}
+
+reinit_debug

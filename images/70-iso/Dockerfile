@@ -1,10 +1,10 @@
 ARG REPO
 ARG TAG
-FROM ${REPO}/k3os-package:${TAG} as package
+FROM ${REPO}/macula-package:${TAG} as package
 
 ARG REPO
 ARG TAG
-FROM ${REPO}/k3os-base:${TAG} as base
+FROM ${REPO}/macula-base:${TAG} as base
 ARG VERSION
 ARG ARCH
 RUN apk add xorriso grub grub-efi mtools libvirt qemu-img
@@ -20,9 +20,9 @@ COPY grub.cfg /usr/src/iso/boot/grub/grub.cfg
 
 COPY --from=package /output/ /usr/src/iso/
 
-COPY config.yaml /usr/src/iso/k3os/system/
+COPY config.yaml /usr/src/iso/macula/system/
 RUN mkdir -p /output && \
-    grub-mkrescue -o /output/k3os.iso /usr/src/iso/. -- -volid K3OS -joliet on && \
-    [ -e /output/k3os.iso ] # grub-mkrescue doesn't exit non-zero on failure
+    grub-mkrescue -o /output/maculaos.iso /usr/src/iso/. -- -volid MACULA -joliet on && \
+    [ -e /output/maculaos.iso ] # grub-mkrescue doesn't exit non-zero on failure
 
 CMD ["run-kvm.sh"]

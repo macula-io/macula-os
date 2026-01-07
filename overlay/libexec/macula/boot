@@ -75,7 +75,7 @@ setup_services()
 
 setup_config()
 {
-    k3os config --boot
+    maculaos config --boot
     if [ -e /etc/conf.d/udev-settle ]; then
         ln -s /etc/init.d/udev-settle /etc/runlevels/sysinit/
     fi
@@ -123,15 +123,15 @@ setup_hostname()
         return 0
     fi
 
-    if [ -e /var/lib/rancher/k3os/hostname ]; then
-        cp /var/lib/rancher/k3os/hostname /etc/hostname
+    if [ -e /var/lib/macula/hostname ]; then
+        cp /var/lib/macula/hostname /etc/hostname
         return 0
     fi
 
-    mkdir -p /var/lib/rancher/k3os
-    HOSTNAME=k3os-${RANDOM}
-    echo $HOSTNAME > /var/lib/rancher/k3os/hostname
-    cp /var/lib/rancher/k3os/hostname /etc/hostname
+    mkdir -p /var/lib/macula
+    HOSTNAME=macula-${RANDOM}
+    echo $HOSTNAME > /var/lib/macula/hostname
+    cp /var/lib/macula/hostname /etc/hostname
 
 }
 
@@ -142,9 +142,9 @@ setup_mounts()
         mount --bind /.base/boot /boot
     fi
 
-    if [ -e /.base/k3os/system ]; then
-        mkdir -p /k3os/system
-        mount -o ro --bind /.base/k3os/system /k3os/system
+    if [ -e /.base/macula/system ]; then
+        mkdir -p /macula/system
+        mount -o ro --bind /.base/macula/system /macula/system
     fi
 
     # Twice on purpose.  A live system double mounts this
@@ -175,12 +175,12 @@ do_grow_live()
 
 grow_live()
 {
-    if [ "$K3OS_MODE" != "local" ]; then
+    if [ "$MACULA_MODE" != "local" ]; then
         return 0
     fi
 
-    if [ -e /k3os/system/growpart ]; then
-        read DEV NUM < /k3os/system/growpart
+    if [ -e /macula/system/growpart ]; then
+        read DEV NUM < /macula/system/growpart
         if [ ! -e "${DEV}${NUM}" ]; then
             # /dev/sda2 => /dev/sda2
             # /dev/nvme0n1p2 => /dev/nvme0n1p2
@@ -196,7 +196,7 @@ grow_live()
         fi
         pinfo Growing ${PART:=${DEV}${NUM}}
         do_grow_live $DEV $NUM $PART || true
-        rm -f /k3os/system/growpart
+        rm -f /macula/system/growpart
     fi
 }
 

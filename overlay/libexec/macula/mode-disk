@@ -1,6 +1,6 @@
 #!/bin/bash
 
-TARGET=/run/k3os/target
+TARGET=/run/macula/target
 
 source /usr/lib/os-release
 
@@ -18,8 +18,8 @@ setup_mounts()
     mkdir -p $TARGET
     mount -L K3OS_STATE $TARGET
 
-    if [ -e $TARGET/k3os/system/growpart ]; then
-        read DEV NUM < $TARGET/k3os/system/growpart
+    if [ -e $TARGET/macula/system/growpart ]; then
+        read DEV NUM < $TARGET/macula/system/growpart
         if [ ! -e "${DEV}${NUM}" ]; then
             # /dev/sda2 => /dev/sda2
             # /dev/nvme0n1p2 => /dev/nvme0n1p2
@@ -38,40 +38,40 @@ setup_mounts()
             grow $DEV $NUM $PART || true
             mount -L K3OS_STATE $TARGET
         fi
-        rm -f $TARGET/k3os/system/growpart
+        rm -f $TARGET/macula/system/growpart
     fi
 }
 
 setup_kernel_squashfs()
 {
-    KER_SRC="/.base/k3os/system/kernel/$(uname -r)/kernel.squashfs"
-    KER_DEST="$TARGET/k3os/system/kernel/$(uname -r)/kernel.squashfs"
+    KER_SRC="/.base/macula/system/kernel/$(uname -r)/kernel.squashfs"
+    KER_DEST="$TARGET/macula/system/kernel/$(uname -r)/kernel.squashfs"
     if [ -e $KER_SRC ] && [ ! -e $KER_DEST ]; then
         mkdir -p $(dirname ${KER_DEST})
         cp -r $KER_SRC $KER_DEST
     fi
 }
 
-setup_k3os()
+setup_macula()
 {
-    if [ -e $TARGET/k3os/system/k3os/current/k3os ]; then
+    if [ -e $TARGET/macula/system/macula/current/maculaos ]; then
         return 0
     fi
 
-    K3OS_SRC=/.base/k3os/system/k3os/current/k3os
-    K3OS_FILE=$TARGET/k3os/system/k3os/${VERSION_ID}/k3os
+    MACULA_SRC=/.base/macula/system/macula/current/maculaos
+    MACULA_FILE=$TARGET/macula/system/macula/${VERSION_ID}/maculaos
 
-    if [ ! -e ${K3OS_SRC} ]; then
+    if [ ! -e ${MACULA_SRC} ]; then
         return 0
     fi
 
-    if [ ! -e ${K3OS_FILE} ]; then
-        mkdir -p $(dirname ${K3OS_FILE}.tmp)
-        cp -f ${K3OS_SRC} ${K3OS_FILE}.tmp
-        mv -f ${K3OS_FILE}.tmp ${K3OS_FILE}
+    if [ ! -e ${MACULA_FILE} ]; then
+        mkdir -p $(dirname ${MACULA_FILE}.tmp)
+        cp -f ${MACULA_SRC} ${MACULA_FILE}.tmp
+        mv -f ${MACULA_FILE}.tmp ${MACULA_FILE}
     fi
 
-    ln -sf ${VERSION_ID} $TARGET/k3os/system/k3os/current
+    ln -sf ${VERSION_ID} $TARGET/macula/system/macula/current
 }
 
 setup_init()
@@ -81,16 +81,16 @@ setup_init()
     fi
 
     mkdir -p $TARGET/sbin
-    ln -sf ../k3os/system/k3os/current/k3os $TARGET/sbin/init
+    ln -sf ../macula/system/macula/current/maculaos $TARGET/sbin/init
 }
 
 setup_k3s()
 {
-    if [ -e $TARGET/k3os/system/k3s/current/k3s ]; then
+    if [ -e $TARGET/macula/system/k3s/current/k3s ]; then
         return 0
     fi
 
-    for i in $(ls -drt $TARGET/k3os/system/k3s/*); do
+    for i in $(ls -drt $TARGET/macula/system/k3s/*); do
         if [ ! -L "$i" ]; then
             LATEST=$i
             break
@@ -98,18 +98,18 @@ setup_k3s()
     done
 
     if [ -e "${LATEST}" ]; then
-        ln -sf $(basename "${LATEST}") $TARGET/k3os/system/k3s/current
+        ln -sf $(basename "${LATEST}") $TARGET/macula/system/k3s/current
         return 0
     fi
 }
 
 takeover()
 {
-    if [ ! -e k3os/system/takeover ]; then
+    if [ ! -e macula/system/takeover ]; then
         return 0
     fi
 
-    touch k3os/system/factory-reset
+    touch macula/system/factory-reset
 
     if [ -L sbin ]; then
       rm -f sbin
@@ -117,7 +117,7 @@ takeover()
 
     for i in *; do
         case $i in
-            boot|k3os|sbin)
+            boot|macula|sbin)
                 ;;
             *)
                 rm -rf $i
@@ -125,7 +125,7 @@ takeover()
     done
     for i in sbin/*; do
         case $i in
-            sbin/init|sbin/k3s|sbin/k3os)
+            sbin/init|sbin/k3s|sbin/maculaos)
                 ;;
             *)
                 rm -rf "$i"
@@ -133,12 +133,12 @@ takeover()
     done
 
     rm -rf boot/[^g]*
-    rm -f k3os/system/takeover
-    rm -rf k3os/data
+    rm -f macula/system/takeover
+    rm -rf macula/data
     sync
     
-    if [ -e k3os/system/poweroff ]; then
-        rm -f k3os/system/poweroff
+    if [ -e macula/system/poweroff ]; then
+        rm -f macula/system/poweroff
         sync
         poweroff -f
     else
@@ -147,7 +147,7 @@ takeover()
 }
 
 setup_mounts
-setup_k3os
+setup_macula
 setup_kernel_squashfs
 setup_init
 setup_k3s
@@ -156,12 +156,12 @@ cd $TARGET
 
 takeover || true
 
-if [ -e k3os/system/factory-reset ] || [ -e k3os/system/ephemeral ]; then
-    rm -rf k3os/data k3os/system/factory-reset
+if [ -e macula/system/factory-reset ] || [ -e macula/system/ephemeral ]; then
+    rm -rf macula/data macula/system/factory-reset
 fi
 
 losetup -d /dev/loop0 || true
 mount --make-rprivate /
 mkdir -p .root
 pivot_root . .root
-K3OS_MODE=local exec /sbin/init
+MACULA_MODE=local exec /sbin/init
