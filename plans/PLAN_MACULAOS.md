@@ -349,9 +349,19 @@ spec:
 - [x] Update Linux kernel to latest LTS (6.6.x via Alpine linux-lts)
 - [x] Complete k3os -> MaculaOS rebranding (Go code, scripts, Dockerfiles)
 - [x] Verify amd64 build completes (2026-01-07)
-- [ ] Verify arm64 build completes
+- [ ] Verify arm64 build completes (requires QEMU user-mode emulation or native arm64)
 - [x] Test boot in QEMU (2026-01-07) - PASSES
-- [ ] Document build process
+- [x] Document build process (2026-01-07)
+
+**arm64 Build Requirements:**
+Cross-architecture builds require QEMU user-mode emulation:
+```bash
+# Enable arm64 emulation (requires privileged Docker)
+docker run --privileged --rm tonistiigi/binfmt --install arm64
+# Then build with:
+ARCH=arm64 make ci
+```
+Alternatively, build on native arm64 hardware (Raspberry Pi 4/5, ARM server).
 
 **QEMU Boot Test Results (2026-01-07):**
 - ✅ Kernel loads successfully
