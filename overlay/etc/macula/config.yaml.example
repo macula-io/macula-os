@@ -1,0 +1,84 @@
+# MaculaOS Default Configuration
+# Copy this file to /var/lib/macula/config.yaml and customize as needed.
+# See https://github.com/macula-io/macula-os for documentation.
+
+# Hostname pattern: macula-{MAC} is used if not specified
+# hostname: macula-edge-01
+
+# SSH authorized keys for the rancher user
+# ssh_authorized_keys:
+#   - ssh-rsa AAAA... user@example.com
+
+# MaculaOS-specific configuration
+macula:
+  # Data sources for cloud-init style configuration
+  # Options: aws, gce, digitalocean, packet, cdrom, none
+  # dataSources:
+  #   - cdrom
+
+  # Kernel modules to load at boot
+  # modules:
+  #   - kvm
+  #   - kvm_intel
+
+  # Sysctl settings
+  # sysctls:
+  #   net.ipv4.ip_forward: "1"
+
+  # NTP servers (defaults to pool.ntp.org)
+  # ntpServers:
+  #   - 0.pool.ntp.org
+  #   - 1.pool.ntp.org
+
+  # DNS nameservers
+  # dnsNameservers:
+  #   - 8.8.8.8
+  #   - 8.8.4.4
+
+  # Wi-Fi configuration (for wireless edge nodes)
+  # wifi:
+  #   - name: MyNetwork
+  #     passphrase: secret123
+
+  # Password for the rancher user (hash or plaintext)
+  # Default: rancher (displayed on boot screen if not changed)
+  # password: rancher
+
+  # k3s cluster configuration
+  # Join an existing cluster:
+  # serverUrl: https://master.example.com:6443
+  # token: K10abc123...
+
+  # Node labels for k3s
+  # labels:
+  #   macula.io/role: edge
+  #   macula.io/region: home
+
+  # k3s arguments (passed to k3s server/agent)
+  # k3sArgs:
+  #   - "--disable=traefik"
+  #   - "--flannel-backend=wireguard"
+
+  # Environment variables for k3s
+  # environment:
+  #   INSTALL_K3S_SKIP_DOWNLOAD: "true"
+
+  # Node taints
+  # taints:
+  #   - "node-role.kubernetes.io/edge=:NoSchedule"
+
+# Commands to run at various boot stages
+# bootCmd:
+#   - echo "Early boot command"
+# initCmd:
+#   - echo "After init command"
+# runCmd:
+#   - echo "After k3s starts"
+
+# Write additional files to the filesystem
+# writeFiles:
+#   - path: /etc/example.conf
+#     content: |
+#       key=value
+#     permissions: "0644"
+#     owner: root:root

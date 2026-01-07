@@ -75,7 +75,7 @@ func ReadConfig() (CloudConfig, error) {
 
 func readersToObject(readers ...reader) (CloudConfig, error) {
 	result := CloudConfig{
-		K3OS: K3OS{
+		Macula: Macula{
 			Install: &Install{},
 		},
 	}

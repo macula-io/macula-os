@@ -14,6 +14,8 @@ RUN apk --no-cache add \
     cryptsetup \
     curl \
     dbus \
+    avahi \
+    avahi-tools \
     dmidecode \
     dosfstools \
     e2fsprogs \

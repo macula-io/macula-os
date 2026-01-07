@@ -1,6 +1,6 @@
 # MaculaOS - Custom Linux Distribution Plan
 
-**Status:** In Progress (Phase 1)
+**Status:** In Progress (Phase 2 - Nearly Complete)
 **Created:** 2026-01-07
 **Repository:** `macula-io/macula-os`
 **Based on:** k3OS (rancher/k3os fork)
@@ -425,18 +425,31 @@ with arm64 naming but the binaries are still amd64 (base images pull host arch).
 **Goal:** Add Macula-specific components
 
 - [ ] Create `images/45-macula/Dockerfile`
-- [ ] Add Avahi/mDNS support
-- [ ] Create default k3os config template
-- [ ] Add Macula branding (boot splash, MOTD)
-- [ ] Pre-load Console container image
-- [ ] Pre-load essential k3s images (airgap)
-- [ ] Update overlay files
+- [x] Add Avahi/mDNS support (2026-01-07)
+  - Added avahi + avahi-tools to base image
+  - Created Avahi service definition: `overlay/etc/avahi/services/macula.service`
+  - Created Avahi daemon config: `overlay/etc/avahi/avahi-daemon.conf`
+  - Enabled avahi-daemon in boot runlevel
+- [x] Create default macula config template (2026-01-07)
+  - Created `overlay/etc/macula/config.yaml.example`
+  - Renamed K3OS struct to Macula in Go code
+  - Updated all YAML configs to use `macula:` key
+- [x] Add Macula branding (boot splash, MOTD) (2026-01-07)
+  - Updated `overlay/sbin/update-issue` with MaculaOS banner
+- [x] Pre-load Console container image (2026-01-07)
+  - Created airgap images directory structure
+  - Created `scripts/download-airgap-images.sh` for image download
+  - Created README with instructions for image pre-loading
+- [ ] Pre-load essential k3s images (airgap) - requires CI/CD integration
+- [x] Update overlay files (2026-01-07)
 
-**Files to create:**
-- `images/45-macula/Dockerfile`
-- `overlay/etc/init.d/macula-mdns`
+**Files created:**
 - `overlay/etc/avahi/services/macula.service`
-- `overlay/etc/k3os/config.yaml.tmpl`
+- `overlay/etc/avahi/avahi-daemon.conf`
+- `overlay/etc/macula/config.yaml.example`
+- `overlay/var/lib/rancher/k3s/agent/images/README.md`
+- `scripts/download-airgap-images.sh`
+- `scripts/rebrand-config-struct.sh`
 
 ### Phase 3: First-Boot Wizard (Week 3-4)
 

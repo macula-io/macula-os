@@ -1,0 +1,37 @@
+<?xml version="1.0" standalone='no'?>
+<!DOCTYPE service-group SYSTEM "avahi-service.dtd">
+<!--
+  Macula mDNS Service Definition
+  Advertises MaculaOS nodes on the local network for auto-discovery.
+-->
+<service-group>
+  <name replace-wildcards="yes">MaculaOS on %h</name>
+
+  <!-- Macula mesh discovery service -->
+  <service>
+    <type>_macula._tcp</type>
+    <port>6443</port>
+    <txt-record>version=1.0.0</txt-record>
+    <txt-record>role=edge</txt-record>
+  </service>
+
+  <!-- HTTP service for Console/FirstBoot UI -->
+  <service>
+    <type>_http._tcp</type>
+    <port>80</port>
+    <txt-record>path=/</txt-record>
+  </service>
+
+  <!-- HTTPS service for Console -->
+  <service>
+    <type>_https._tcp</type>
+    <port>443</port>
+    <txt-record>path=/</txt-record>
+  </service>
+
+  <!-- SSH service -->
+  <service>
+    <type>_ssh._tcp</type>
+    <port>22</port>
+  </service>
+</service-group>
