@@ -1,8 +1,8 @@
 # MaculaOS - Custom Linux Distribution Plan
 
-**Status:** In Progress (Phase 3 Complete + Consistent Naming)
+**Status:** In Progress (Phase 3 Complete, Phase 4 Planned)
 **Created:** 2026-01-07
-**Last Updated:** 2026-01-07
+**Last Updated:** 2026-01-07 (Added: Mesh Roles, Setup Wizard, Branding, Tools, Updates)
 **Repository:** `macula-io/macula-os`
 **Based on:** k3OS (rancher/k3os fork)
 
@@ -238,6 +238,310 @@ ssh_authorized_keys: []
 run_cmd:
   - /opt/macula/scripts/firstboot-check.sh
 ```
+
+### 4.4 Mesh Role Configuration (NEW)
+
+MaculaOS nodes can serve different roles in the Macula mesh. These roles are **not mutually exclusive** - a node can have multiple roles enabled.
+
+```yaml
+# /var/lib/maculaos/config.yaml - Mesh roles section
+
+maculaos:
+  mesh:
+    # Mesh roles (Peer is always implicitly enabled)
+    roles:
+      bootstrap: false    # DHT bootstrap registry endpoint
+      gateway: false      # NAT relay / API ingress gateway
+
+    # Bootstrap peers to connect to (if not a bootstrap node itself)
+    bootstrap_peers:
+      - "https://boot.macula.io:443"
+
+    # Realm identifier (reverse domain notation)
+    realm: "io.macula"
+
+    # TLS mode: "development" (self-signed) or "production" (verified)
+    tls_mode: "development"
+```
+
+**Role Matrix:**
+
+| Role | Purpose | Network Requirements | Use Case |
+|------|---------|---------------------|----------|
+| **Peer** | Regular mesh participant | Outbound only | Home device, edge sensor, workstation |
+| **Bootstrap** | DHT entry point for new nodes | Public IP/port, well-known DNS | Cloud VM, datacenter server |
+| **Gateway** | NAT relay, external API access | Public IP/port, bandwidth | Edge server with public IP |
+
+**Role Combinations:**
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  Macula Mesh Role Selector                                  │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  Base Role (always enabled):                                │
+│  ✓ Peer - Connect to mesh, provide/consume services        │
+│                                                             │
+│  Additional Roles (toggle):                                 │
+│  [ ] Bootstrap - Serve as DHT entry point for new nodes    │
+│  [ ] Gateway   - Relay traffic for NAT'd peers             │
+│                                                             │
+│  Common Configurations:                                     │
+│  • Home device:     Peer only                              │
+│  • Cloud entry:     Peer + Bootstrap                        │
+│  • Edge relay:      Peer + Gateway                          │
+│  • Infrastructure:  Peer + Bootstrap + Gateway              │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**What Each Role Enables:**
+
+| Role | Services Started | Ports Opened | Config Required |
+|------|------------------|--------------|-----------------|
+| Peer | macula-mesh | Outbound only | bootstrap_peers, realm |
+| Bootstrap | macula-bootstrap | 443/tcp (QUIC) | Public DNS, TLS cert |
+| Gateway | macula-gateway | 443/tcp, 80/tcp | Public IP, bandwidth limits |
+
+**Implementation Tasks:**
+- [ ] Add `mesh` section to config schema (`pkg/config/config.go`)
+- [ ] Add `ApplyMeshRoles()` applicator (`pkg/cc/funcs.go`)
+- [ ] Add mesh role selection to CLI wizard (`pkg/cliinstall/ask.go`)
+- [ ] Add mesh role selection to firstboot web UI
+- [ ] Create systemd/OpenRC services for each role
+- [ ] Configure firewall rules based on roles
+
+### 4.5 ASCII Art Branding & Fastfetch (NEW)
+
+Display MaculaOS branding and system info at login via fastfetch with custom ASCII logo.
+
+**ASCII Logo (hand-crafted for terminal):**
+
+```
+      ○───○
+     /│   │\        __  __                  _
+    ○─┼───┼─○      |  \/  | __ _  ___ _   _| | __ _
+     \│   │/       | |\/| |/ _` |/ __| | | | |/ _` |
+      ○───○        | |  | | (_| | (__| |_| | | (_| |
+       \ /         |_|  |_|\__,_|\___|\__,_|_|\__,_|
+        ○
+                   MaculaOS v1.0.0 (amd64)
+```
+
+**Fastfetch Integration:**
+
+```
+      ○───○           macula@macula-a1b2
+     /│   │\          ─────────────────────
+    ○─┼───┼─○         OS: MaculaOS 1.0.0 amd64
+     \│   │/          Kernel: 6.6.x-lts
+      ○───○           Uptime: 2 hours, 15 mins
+       \ /            Memory: 1.2 GiB / 8 GiB
+        ○             Mesh: Connected (12 peers)
+                      Role: Peer
+                      Realm: io.macula
+```
+
+**Implementation:**
+
+| File | Purpose |
+|------|---------|
+| `overlay/etc/macula/fastfetch.jsonc` | Fastfetch config with custom logo |
+| `overlay/etc/macula/logo.txt` | ASCII art logo file |
+| `overlay/etc/profile.d/macula-welcome.sh` | Run fastfetch on login |
+| `overlay/sbin/macula-sysinfo` | Custom script for mesh info |
+
+**Implementation Tasks:**
+- [ ] Create ASCII art logo file
+- [ ] Create fastfetch config with Macula branding
+- [ ] Add custom module for mesh status (peers, role, realm)
+- [ ] Add to profile.d for automatic display on login
+- [ ] Update MOTD with minimal banner for non-interactive
+
+### 4.6 Included Tools (NEW)
+
+MaculaOS includes essential CLI tools for system administration and debugging.
+
+**Included by Default:**
+
+| Tool | Size | Category | Purpose |
+|------|------|----------|---------|
+| **vim** | ~30MB | Editor | Config file editing |
+| **nano** | ~2MB | Editor | Beginner-friendly editing |
+| **btop** | ~2MB | Monitor | Beautiful system monitor |
+| **htop** | ~500KB | Monitor | Lightweight process viewer |
+| **fastfetch** | ~1MB | Info | System info with ASCII logo |
+| **tmux** | ~1MB | Terminal | Session multiplexer for SSH |
+| **curl** | ~1MB | Network | HTTP client (already in Alpine) |
+| **jq** | ~500KB | JSON | JSON parsing for scripts |
+| **rsync** | ~500KB | Files | File synchronization |
+| **git** | ~15MB | VCS | Version control |
+
+**Total additional size:** ~55MB
+
+**NOT Included (available via containers):**
+
+| Tool | Size | Why Not Included |
+|------|------|------------------|
+| k9s | ~50MB | Large, optional K8s TUI |
+| neovim | ~40MB | vim is sufficient for base |
+| docker CLI | ~50MB | Use crictl or k3s instead |
+
+**Installation in Dockerfile:**
+
+```dockerfile
+# images/00-base/Dockerfile
+RUN apk add --no-cache \
+    vim nano \
+    btop htop \
+    fastfetch \
+    tmux \
+    jq \
+    rsync \
+    git
+```
+
+### 4.7 Immutable Design & Package Management (NEW)
+
+MaculaOS follows an **immutable infrastructure** design - the root filesystem is read-only, and updates are atomic.
+
+**Filesystem Layout:**
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  MaculaOS Filesystem Architecture                           │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  /                    ← squashfs (READ-ONLY)                │
+│  ├── bin/             ← immutable binaries                  │
+│  ├── etc/             ← overlay (tmpfs or persistent)       │
+│  ├── home/            ← overlay                             │
+│  ├── opt/             ← immutable (Macula tools)            │
+│  ├── usr/             ← immutable                           │
+│  └── var/             ← persistent data partition           │
+│      └── lib/                                               │
+│          ├── maculaos/   ← config, credentials              │
+│          └── rancher/                                       │
+│              └── k3s/    ← k3s data, containers             │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**Package Manager Behavior:**
+
+| Action | Result | Persistence |
+|--------|--------|-------------|
+| `apk add vim` | Installs to overlay | ❌ Lost on reboot |
+| `apk add vim` (with persistence) | Installs to overlay | ✅ Survives reboot |
+| Deploy via k3s | Container runs | ✅ Managed by k8s |
+| Custom ISO build | Baked into squashfs | ✅ Permanent |
+
+**For users who need persistent packages:**
+
+```yaml
+# /var/lib/maculaos/config.yaml
+maculaos:
+  live:
+    persistence: true           # Enable persistent overlay
+    persistence_device: auto    # auto-detect or /dev/sda3
+    persistence_size: 4G        # Size of persistence partition
+```
+
+**Recommended approach by use case:**
+
+| Use Case | Approach |
+|----------|----------|
+| Quick testing | `apk add <pkg>` (temporary) |
+| Development | Enable persistence overlay |
+| Production software | Deploy as k3s pod/container |
+| Enterprise customization | Build custom ISO |
+
+### 4.8 Update Mechanism (NEW)
+
+MaculaOS uses an **A/B partition scheme** for atomic, rollback-safe updates.
+
+**Disk Partition Layout:**
+
+```
+┌──────────┬──────────┬──────────┬──────────────────────────┐
+│  boot    │ rootfs-A │ rootfs-B │         data             │
+│  (EFI)   │ (active) │ (standby)│      (persistent)        │
+│  ~100MB  │  ~400MB  │  ~400MB  │      remaining           │
+└──────────┴──────────┴──────────┴──────────────────────────┘
+```
+
+**Update Process:**
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  MaculaOS Update Flow                                       │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  1. Check for updates                                       │
+│     └── Query GitHub Releases or self-hosted endpoint       │
+│                                                             │
+│  2. Download new squashfs                                   │
+│     └── Stream to rootfs-B (standby partition)              │
+│                                                             │
+│  3. Verify integrity                                        │
+│     └── SHA256 checksum + optional GPG signature            │
+│                                                             │
+│  4. Update bootloader                                       │
+│     └── Set next_boot = B, boot_count = 0                   │
+│                                                             │
+│  5. Reboot                                                  │
+│     └── System boots from rootfs-B                          │
+│                                                             │
+│  6. Health check                                            │
+│     └── If boot fails 3x → automatic rollback to A          │
+│                                                             │
+│  7. Confirm success                                         │
+│     └── Mark B as active, A becomes standby                 │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**Update Triggers:**
+
+```bash
+# CLI - Manual
+maculaos upgrade --check          # Check for updates
+maculaos upgrade --apply          # Download and apply
+maculaos upgrade --rollback       # Revert to previous
+
+# CLI - Automatic (via system-upgrade-controller)
+# Already built into k3OS, managed by k3s
+
+# Console UI
+Dashboard → System → Updates → Check Now
+```
+
+**Update Sources:**
+
+| Source | Config | Use Case |
+|--------|--------|----------|
+| GitHub Releases | `upgrade.url: github://macula-io/macula-os` | Default |
+| Self-hosted | `upgrade.url: https://updates.example.com/` | Enterprise |
+| USB drive | `maculaos upgrade --from /mnt/usb/` | Air-gapped |
+
+**Configuration:**
+
+```yaml
+# /var/lib/maculaos/config.yaml
+maculaos:
+  upgrade:
+    channel: stable              # stable, beta, or nightly
+    auto_check: true             # Check for updates on boot
+    auto_apply: false            # Require manual approval
+    url: github://macula-io/macula-os
+```
+
+**Rollback Safety:**
+
+- Boot counter tracks failed boots
+- After 3 consecutive failures → automatic rollback
+- User can manually rollback anytime via `maculaos upgrade --rollback`
+- Previous version always preserved until next successful update
 
 ---
 
@@ -532,7 +836,99 @@ Commits:
 - `152f09c` - refactor: consistent maculaos naming convention
 - `13a174d` - fix: update Macula → Maculaos in read.go
 
-### Phase 4: Multi-Arch Builds & Testing (Week 4-5)
+### Phase 4: Enhanced Setup Wizard (NEW)
+
+**Goal:** Complete setup experience with all configuration options
+
+The existing setup infrastructure (`pkg/cliinstall/`, `cmd/macula-firstboot/`) needs extension to support:
+
+#### 4.1 Missing System Configuration
+
+| Feature | Config Field | Applicator | CLI Prompt | Web UI |
+|---------|--------------|------------|------------|--------|
+| Keyboard Layout | `maculaos.keyboard` | `ApplyKeyboard()` | `AskKeyboard()` | Dropdown |
+| Timezone | `maculaos.timezone` | `ApplyTimezone()` | `AskTimezone()` | Dropdown |
+| Locale | `maculaos.locale` | `ApplyLocale()` | `AskLocale()` | Dropdown |
+
+**Implementation Tasks:**
+
+- [ ] Add config fields to `pkg/config/config.go`:
+  ```go
+  type Maculaos struct {
+      // ... existing fields ...
+      Keyboard string `json:"keyboard,omitempty"`  // e.g., "us", "de", "fr"
+      Timezone string `json:"timezone,omitempty"`  // e.g., "Europe/Berlin"
+      Locale   string `json:"locale,omitempty"`    // e.g., "en_US.UTF-8"
+  }
+  ```
+
+- [ ] Implement applicators in `pkg/cc/funcs.go`:
+  ```go
+  func ApplyKeyboard(cfg *config.CloudConfig) error {
+      // loadkeys or setup-keymap (Alpine)
+  }
+  func ApplyTimezone(cfg *config.CloudConfig) error {
+      // ln -sf /usr/share/zoneinfo/$TZ /etc/localtime
+  }
+  func ApplyLocale(cfg *config.CloudConfig) error {
+      // echo "LANG=$LOCALE" > /etc/locale.conf
+  }
+  ```
+
+- [ ] Add CLI prompts in `pkg/cliinstall/ask.go`:
+  ```go
+  func AskKeyboard() (string, error)   // Show common layouts
+  func AskTimezone() (string, error)   // Show region → city picker
+  func AskLocale() (string, error)     // Show common locales
+  ```
+
+- [ ] Add to firstboot web UI (`cmd/macula-firstboot/`)
+
+#### 4.2 Mesh Role Selection
+
+- [ ] Add mesh roles to config schema (see Section 4.4)
+- [ ] Add CLI prompts for mesh roles:
+  ```go
+  func AskMeshRoles() (*MeshConfig, error) {
+      // "Will this node serve as a bootstrap entry point?" [y/N]
+      // "Will this node relay traffic for NAT'd peers?" [y/N]
+  }
+  ```
+- [ ] Add mesh role toggles to firstboot web UI
+- [ ] Validate role requirements (bootstrap needs public IP warning)
+
+#### 4.3 Boot Mode / Persistence Options
+
+Current boot modes: `disk`, `local`, `live-server`, `live-agent`, `shell`, `install`
+
+**Add persistence option for live mode:**
+
+```yaml
+maculaos:
+  live:
+    persistence: true           # Enable persistent overlay
+    persistence_device: auto    # auto-detect or specify device
+    persistence_size: 4G        # Size of persistence partition
+```
+
+- [ ] Add persistence config fields
+- [ ] Modify live boot script to mount persistence overlay
+- [ ] Add "Enable persistence?" prompt to installer
+- [ ] Create persistence partition on USB stick (if space available)
+
+#### 4.4 Files to Create/Modify
+
+| File | Changes |
+|------|---------|
+| `pkg/config/config.go` | Add `Keyboard`, `Timezone`, `Locale`, `Mesh`, `Live` fields |
+| `pkg/cc/funcs.go` | Add `ApplyKeyboard()`, `ApplyTimezone()`, `ApplyLocale()`, `ApplyMeshRoles()` |
+| `pkg/cliinstall/ask.go` | Add `AskKeyboard()`, `AskTimezone()`, `AskLocale()`, `AskMeshRoles()` |
+| `pkg/cliinstall/install.go` | Integrate new prompts into wizard flow |
+| `cmd/macula-firstboot/main.go` | Add API endpoints for new config |
+| `cmd/macula-firstboot/templates/` | Add settings pages |
+| `overlay/libexec/macula/live` | Add persistence overlay support |
+
+### Phase 5: Multi-Arch Builds & Testing
 
 **Goal:** Production-ready images
 
@@ -548,7 +944,7 @@ Commits:
 - `.github/workflows/build.yml`
 - `scripts/create-vm-images.sh`
 
-### Phase 5: Distribution & Documentation (Week 5-6)
+### Phase 6: Distribution & Documentation
 
 **Goal:** Ready for users
 
