@@ -381,9 +381,15 @@ Alternatively, build on native arm64 hardware (Raspberry Pi 4/5, ARM server).
 - Modified Go code to try multiple paths for modprobe (`/sbin/modprobe`, `/bin/modprobe`, `modprobe`)
 - Committed in `58cf948` - "fix: add kmod and libraries to initrd for loop device support"
 
-**Minor issues noted:**
-- `/usr/libexec/k3os/k3s-install.sh: no such file or directory` - k3os path not yet rebranded
+**Additional rebranding (2026-01-07):**
+- Fixed Go code: main.go, pkg/cc/funcs.go, pkg/cli/rc/rc.go, pkg/config/read_cc.go
+- Fixed Kubernetes manifests: system-upgrade-controller.yaml, macula-latest.yaml
+- Updated hostname prefix: `k3os-` → `macula-`
+- Updated node labels: `k3os.io/*` → `macula.io/*`
+
+**Minor issues remaining:**
 - Welcome message still says "k3OS" in some places (cosmetic)
+- packer templates have k3os references (not critical for boot)
 
 **Rebranding completed (2026-01-07):**
 - Go module: `github.com/rancher/k3os` → `github.com/macula-io/macula-os`
