@@ -87,6 +87,7 @@ COPY --from=k3s /output/install.sh /usr/src/image/libexec/macula/k3s-install.sh
 COPY --from=progs /output/metadata /usr/src/image/sbin/metadata
 COPY --from=progs /output/macula-firstboot /usr/src/image/sbin/macula-firstboot
 COPY --from=progs /output/kubectx/kubectx /output/kubectx/kubens /usr/src/image/bin/
+COPY --from=progs /output/nats-server /usr/src/image/bin/nats-server
 
 COPY overlay/ /usr/src/image/
 

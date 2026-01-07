@@ -31,10 +31,22 @@ COPY /vendor/ $GOPATH/src/github.com/macula-io/macula-os/vendor/
 WORKDIR $GOPATH/src/github.com/macula-io/macula-os
 RUN gobuild -mod=vendor -o /output/macula-firstboot ./cmd/macula-firstboot
 
+FROM gobuild as nats
+ARG ARCH
+# Download NATS server static binary
+# NATS uses different arch names: amd64, arm64
+RUN NATS_VERSION="2.10.24" && \
+    NATS_ARCH=$(echo $ARCH | sed 's/amd64/amd64/;s/arm64/arm64/') && \
+    wget -q "https://github.com/nats-io/nats-server/releases/download/v${NATS_VERSION}/nats-server-v${NATS_VERSION}-linux-${NATS_ARCH}.tar.gz" -O /tmp/nats.tar.gz && \
+    tar -xzf /tmp/nats.tar.gz -C /tmp && \
+    mv /tmp/nats-server-v${NATS_VERSION}-linux-${NATS_ARCH}/nats-server /output/nats-server && \
+    chmod +x /output/nats-server
+
 FROM gobuild
 COPY --from=linuxkit /output/ /output/
 COPY --from=macula /output/ /output/
 COPY --from=firstboot /output/ /output/
+COPY --from=nats /output/nats-server /output/nats-server
 WORKDIR /output
 RUN git clone --branch v0.7.0 https://github.com/ahmetb/kubectx.git \
  && chmod -v +x kubectx/kubectx kubectx/kubens

@@ -1,0 +1,110 @@
+#!/sbin/openrc-run
+# MaculaOS NATS Server
+# Provides messaging infrastructure for non-BEAM services to access the Macula mesh
+
+description="NATS Server for Macula mesh integration"
+
+NATS_BIN="${NATS_BIN:-/bin/nats-server}"
+NATS_CONFIG="${NATS_CONFIG:-/etc/macula/nats.conf}"
+NATS_PIDFILE="${NATS_PIDFILE:-/run/nats-server.pid}"
+NATS_LOG="${NATS_LOG:-/var/log/nats-server.log}"
+
+command="$NATS_BIN"
+command_args="-c $NATS_CONFIG -P $NATS_PIDFILE"
+command_background="yes"
+pidfile="$NATS_PIDFILE"
+output_log="$NATS_LOG"
+error_log="$NATS_LOG"
+
+depend() {
+    need net
+    after localmount
+    before k3s-service macula-console
+}
+
+start_pre() {
+    # Check if NATS binary exists
+    if [ ! -x "$NATS_BIN" ]; then
+        eerror "NATS server binary not found at $NATS_BIN"
+        return 1
+    fi
+
+    # Check if config exists
+    if [ ! -f "$NATS_CONFIG" ]; then
+        eerror "NATS config not found at $NATS_CONFIG"
+        return 1
+    fi
+
+    # Check if NATS is enabled in maculaos config
+    if [ -f /var/lib/maculaos/config.yaml ]; then
+        if grep -q "nats:" /var/lib/maculaos/config.yaml; then
+            if grep -A1 "nats:" /var/lib/maculaos/config.yaml | grep -q "enabled: false"; then
+                einfo "NATS disabled in configuration"
+                return 1
+            fi
+        fi
+    fi
+
+    # Create log directory
+    checkpath -d -m 0755 /var/log
+
+    # Create data directory for JetStream (if enabled)
+    checkpath -d -m 0755 /var/lib/maculaos/nats
+
+    return 0
+}
+
+start() {
+    ebegin "Starting NATS server"
+
+    start-stop-daemon --start \
+        --background \
+        --make-pidfile \
+        --pidfile "$NATS_PIDFILE" \
+        --stdout "$NATS_LOG" \
+        --stderr "$NATS_LOG" \
+        --exec "$NATS_BIN" -- -c "$NATS_CONFIG"
+
+    eend $?
+}
+
+stop() {
+    ebegin "Stopping NATS server"
+
+    start-stop-daemon --stop \
+        --pidfile "$NATS_PIDFILE" \
+        --retry=TERM/30/KILL/5
+
+    eend $?
+}
+
+status() {
+    if [ -f "$NATS_PIDFILE" ] && kill -0 $(cat "$NATS_PIDFILE") 2>/dev/null; then
+        einfo "NATS server is running (PID: $(cat $NATS_PIDFILE))"
+        einfo "  Listen: 127.0.0.1:4222"
+        einfo "  Config: $NATS_CONFIG"
+
+        # Show connection count if nats CLI is available
+        if command -v nats >/dev/null 2>&1; then
+            CONNS=$(nats server info 2>/dev/null | grep "Connections:" | awk '{print $2}')
+            [ -n "$CONNS" ] && einfo "  Connections: $CONNS"
+        fi
+
+        return 0
+    else
+        einfo "NATS server is not running"
+        return 3
+    fi
+}
+
+reload() {
+    ebegin "Reloading NATS server configuration"
+
+    if [ -f "$NATS_PIDFILE" ]; then
+        kill -HUP $(cat "$NATS_PIDFILE")
+        eend $?
+    else
+        eerror "NATS server is not running"
+        eend 1
+    fi
+}

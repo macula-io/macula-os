@@ -725,7 +725,83 @@ maculaos:
       path: /var/lib/maculaos/ca
 ```
 
-#### 4.9.5 Edge-Specific Services
+#### 4.9.5 NATS Messaging (NEW)
+
+Embedded NATS server for non-BEAM services to integrate with the Macula mesh.
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  NATS Mesh Bridge Architecture                                   │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐                       │
+│  │ Go Svc   │  │ Rust Svc │  │ Python   │   Non-BEAM Services   │
+│  └────┬─────┘  └────┬─────┘  └────┬─────┘                       │
+│       │             │             │                              │
+│       └─────────────┼─────────────┘                              │
+│                     │ nats://localhost:4222                      │
+│                     ▼                                            │
+│  ┌─────────────────────────────────────────────────────────┐    │
+│  │                    NATS Server                           │    │
+│  │                  (embedded in OS)                        │    │
+│  └─────────────────────────────────────────────────────────┘    │
+│                     │                                            │
+│                     │ NATS Bridge Module                         │
+│                     ▼                                            │
+│  ┌─────────────────────────────────────────────────────────┐    │
+│  │                  Macula Console                          │    │
+│  │               (NATS ↔ Mesh Bridge)                       │    │
+│  └─────────────────────────────────────────────────────────┘    │
+│                     │                                            │
+│                     │ HTTP/3 QUIC                                │
+│                     ▼                                            │
+│  ┌─────────────────────────────────────────────────────────┐    │
+│  │                   Macula Mesh                            │    │
+│  └─────────────────────────────────────────────────────────┘    │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+**Why NATS:**
+- Native pub/sub (mirrors DHT pubsub semantics)
+- Native request/reply (mirrors DHT RPC semantics)
+- Tiny footprint (~20MB binary)
+- Clients for every language (Go, Rust, Python, JS, Java, etc.)
+- No HTTP callback servers needed
+- JetStream for persistent streams (optional)
+
+**NATS Subject Mapping:**
+
+| NATS Subject | Mesh Operation |
+|--------------|----------------|
+| `macula.rpc.{realm}.{procedure}` | DHT RPC call |
+| `macula.pub.{realm}.{topic}` | DHT PubSub publish |
+| `macula.sub.{realm}.{pattern}` | DHT PubSub subscribe |
+| `macula.discover.{realm}.{pattern}` | Service discovery |
+
+**Configuration:**
+
+```yaml
+maculaos:
+  nats:
+    enabled: true               # Enable NATS server
+    listen: 127.0.0.1:4222     # Localhost only (secure default)
+    max_payload: 1MB
+    jetstream:
+      enabled: false            # Enable for persistent streams
+      store_dir: /var/lib/maculaos/nats/jetstream
+      max_file: 1GB
+    cluster:
+      enabled: false            # Enable for multi-node NATS cluster
+      port: 6222
+```
+
+**Files:**
+- `/bin/nats-server` - NATS server binary
+- `/etc/macula/nats.conf` - Server configuration
+- `/etc/init.d/nats-server` - OpenRC service
+
+#### 4.9.6 Edge-Specific Services
 
 Services optimized for IoT/edge workloads.
 
@@ -756,12 +832,13 @@ maculaos:
       wakeup_schedule: ""        # Cron for scheduled wakeup
 ```
 
-#### 4.9.6 Summary: Embedded vs Container-Deployed
+#### 4.9.7 Summary: Embedded vs Container-Deployed
 
 | Component | Embedded (in squashfs) | Container (via k3s) | Rationale |
 |-----------|------------------------|---------------------|-----------|
 | k3s | ✅ | - | Core orchestrator |
 | Macula mesh | ✅ | - | Core networking |
+| **NATS server** | ✅ | - | Mesh integration for non-BEAM |
 | soft-serve (git) | ✅ | - | GitOps foundation |
 | Spegel (registry) | ✅ | - | Image distribution |
 | Fluent-bit | ✅ | - | System logging |
@@ -774,7 +851,7 @@ maculaos:
 | Longhorn | - | ✅ | Distributed storage |
 | Ollama | - | ✅ | Edge AI (large) |
 
-**Total embedded infrastructure:** ~80MB additional (beyond base OS)
+**Total embedded infrastructure:** ~100MB additional (beyond base OS, includes NATS ~20MB)
 
 ### 4.10 Recovery & Troubleshooting (NEW)
 
