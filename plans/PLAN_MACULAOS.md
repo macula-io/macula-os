@@ -354,14 +354,18 @@ spec:
 - [x] Document build process (2026-01-07)
 
 **arm64 Build Requirements:**
-Cross-architecture builds require QEMU user-mode emulation:
-```bash
-# Enable arm64 emulation (requires privileged Docker)
-docker run --privileged --rm tonistiigi/binfmt --install arm64
-# Then build with:
-ARCH=arm64 make ci
-```
-Alternatively, build on native arm64 hardware (Raspberry Pi 4/5, ARM server).
+The current build system doesn't support true cross-compilation. Options:
+
+1. **Native arm64 hardware** (Recommended for production):
+   - Build on Raspberry Pi 4/5, ARM server, or cloud ARM instance
+   - `ARCH=arm64 make ci` works natively
+
+2. **Docker buildx** (Future enhancement):
+   - Requires modifying Dockerfiles to use `--platform linux/arm64`
+   - Base images need explicit platform: `FROM --platform=linux/arm64 alpine:3.20`
+
+Note: Setting `ARCH=arm64` on amd64 host with QEMU emulation creates artifacts
+with arm64 naming but the binaries are still amd64 (base images pull host arch).
 
 **QEMU Boot Test Results (2026-01-07):**
 - ✅ Kernel loads successfully

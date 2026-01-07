@@ -53,19 +53,24 @@ After a successful build, the following artifacts are created in `dist/artifacts
 ARCH=amd64 make ci
 ```
 
-### arm64 (cross-compilation)
+### arm64
 
-Cross-compiling for arm64 on an amd64 host requires QEMU user-mode emulation:
+The current build system doesn't support true cross-compilation from amd64.
 
+**Option 1: Native arm64 hardware** (Recommended)
 ```bash
-# Enable arm64 emulation (requires privileged Docker, one-time setup)
-docker run --privileged --rm tonistiigi/binfmt --install arm64
-
-# Build for arm64
+# On Raspberry Pi 4/5, ARM server, or cloud ARM instance
 ARCH=arm64 make ci
 ```
 
-Alternatively, build on native arm64 hardware (Raspberry Pi 4/5, ARM server).
+**Option 2: Future - Docker buildx**
+True cross-compilation would require modifying the Dockerfiles to use
+`--platform linux/arm64` on all `FROM` statements. This is planned for
+a future enhancement.
+
+**Note:** Setting `ARCH=arm64` on an amd64 host will create artifacts with
+arm64 naming, but the binaries will still be amd64 because Docker pulls
+images matching the host architecture.
 
 ## Testing with QEMU
 
