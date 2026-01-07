@@ -26,6 +26,7 @@ COPY --from=bin /output/ /usr/src/macula/
 
 # Add kmod utilities for module loading (required for loop device)
 # kmod requires: libz (/lib), liblzma (/usr/lib), libzstd (/usr/lib), libcrypto (/lib), musl libc (/lib)
+# Note: musl library name is architecture-dependent (ld-musl-x86_64.so.1 or ld-musl-aarch64.so.1)
 RUN apk add kmod && cd /usr/src/initrd && \
     mkdir -p bin sbin lib && \
     cp /bin/kmod bin/ && \
@@ -38,7 +39,7 @@ RUN apk add kmod && cd /usr/src/initrd && \
     cp /usr/lib/liblzma.so.5* lib/ && \
     cp /usr/lib/libzstd.so.1* lib/ && \
     cp /lib/libcrypto.so.3 lib/ && \
-    cp /lib/ld-musl-x86_64.so.1 lib/
+    cp /lib/ld-musl-*.so.1 lib/
 
 RUN cd /usr/src/initrd && \
     mkdir -p macula/system/macula/${TAG} && \

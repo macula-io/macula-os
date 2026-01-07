@@ -75,7 +75,7 @@ IMPORTANT: Store your passphrase securely. If lost, data cannot be recovered!`,
 }
 
 func statusAction(c *cli.Context) error {
-	fmt.Println("\033[1;36m=== Encryption Status ===\033[0m\n")
+	fmt.Println("\033[1;36m=== Encryption Status ===\033[0m")
 
 	// Check if cryptsetup is available
 	if _, err := exec.LookPath("cryptsetup"); err != nil {

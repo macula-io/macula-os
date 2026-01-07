@@ -94,7 +94,7 @@ Common configurations:
 }
 
 func statusAction(c *cli.Context) error {
-	fmt.Println("\033[1;36m=== Mesh Configuration ===\033[0m\n")
+	fmt.Println("\033[1;36m=== Mesh Configuration ===\033[0m")
 
 	// Read current config
 	cfg, err := readMeshConfig()
@@ -128,7 +128,7 @@ func statusAction(c *cli.Context) error {
 	}
 
 	// Check service status
-	fmt.Println("\n\033[1;36m=== Service Status ===\033[0m\n")
+	fmt.Println("\n\033[1;36m=== Service Status ===\033[0m")
 	checkService("macula-mesh")
 	if cfg.Roles.Bootstrap {
 		checkService("macula-bootstrap")
@@ -270,7 +270,7 @@ func wizardAction(c *cli.Context) error {
 }
 
 func applyAction(c *cli.Context) error {
-	fmt.Println("\033[1;36m=== Applying Mesh Configuration ===\033[0m\n")
+	fmt.Println("\033[1;36m=== Applying Mesh Configuration ===\033[0m")
 
 	cfg, err := readMeshConfig()
 	if err != nil {

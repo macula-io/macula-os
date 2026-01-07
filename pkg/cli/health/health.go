@@ -143,7 +143,7 @@ type HealthCheck struct {
 }
 
 func statusAction(c *cli.Context) error {
-	fmt.Println("\033[1;36m=== Health Check Configuration ===\033[0m\n")
+	fmt.Println("\033[1;36m=== Health Check Configuration ===\033[0m")
 
 	cfg, err := readHealthConfig()
 	if err != nil {
@@ -194,7 +194,7 @@ func checkAction(c *cli.Context) error {
 		return nil
 	}
 
-	fmt.Println("\033[1;36m=== Health Check Results ===\033[0m\n")
+	fmt.Println("\033[1;36m=== Health Check Results ===\033[0m")
 
 	allOk := true
 	for _, result := range results {
@@ -220,7 +220,7 @@ func checkAction(c *cli.Context) error {
 
 func watchAction(c *cli.Context) error {
 	fmt.Printf("Starting health check daemon (interval: %ds)\n", checkInterval)
-	fmt.Println("Press Ctrl+C to stop\n")
+	fmt.Println("Press Ctrl+C to stop")
 
 	cfg, err := readHealthConfig()
 	if err != nil {

@@ -172,8 +172,8 @@ jobs:
 
             | Architecture | ISO | Rootfs |
             |--------------|-----|--------|
-            | **amd64** (Intel/AMD 64-bit) | `maculaos-${{ steps.version.outputs.version }}-amd64.iso` | `macula-rootfs-amd64.tar.gz` |
-            | **arm64** (Raspberry Pi 4/5, ARM servers) | `maculaos-${{ steps.version.outputs.version }}-arm64.iso` | `macula-rootfs-arm64.tar.gz` |
+            | **amd64** (Intel/AMD 64-bit) | `maculaos-amd64.iso` | `maculaos-rootfs-amd64.tar.gz` |
+            | **arm64** (Raspberry Pi 4/5, ARM servers) | `maculaos-arm64.iso` | `maculaos-rootfs-arm64.tar.gz` |
 
             ### Quick Start
 

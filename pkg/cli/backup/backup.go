@@ -151,7 +151,7 @@ type BackupConfig struct {
 }
 
 func statusAction(c *cli.Context) error {
-	fmt.Println("\033[1;36m=== Backup Status ===\033[0m\n")
+	fmt.Println("\033[1;36m=== Backup Status ===\033[0m")
 
 	cfg, err := readBackupConfig()
 	if err != nil {
@@ -169,7 +169,7 @@ func statusAction(c *cli.Context) error {
 	}
 
 	// Show local backups
-	fmt.Println("\n\033[1;36m=== Local Backups ===\033[0m\n")
+	fmt.Println("\n\033[1;36m=== Local Backups ===\033[0m")
 	backups, err := listLocalBackups()
 	if err != nil || len(backups) == 0 {
 		fmt.Println("  No local backups found")
@@ -180,7 +180,7 @@ func statusAction(c *cli.Context) error {
 	}
 
 	// Show backup paths
-	fmt.Println("\n\033[1;36m=== Backup Paths ===\033[0m\n")
+	fmt.Println("\n\033[1;36m=== Backup Paths ===\033[0m")
 	fmt.Println("  Default paths included:")
 	fmt.Println("    • /var/lib/maculaos/ (config, credentials)")
 	fmt.Println("  Optional paths:")
@@ -192,7 +192,7 @@ func statusAction(c *cli.Context) error {
 }
 
 func createAction(c *cli.Context) error {
-	fmt.Println("\033[1;36m=== Creating Backup ===\033[0m\n")
+	fmt.Println("\033[1;36m=== Creating Backup ===\033[0m")
 
 	// Determine paths to backup
 	paths := []string{"/var/lib/maculaos"}
@@ -268,7 +268,7 @@ func createAction(c *cli.Context) error {
 }
 
 func restoreAction(c *cli.Context) error {
-	fmt.Println("\033[1;36m=== Restoring Backup ===\033[0m\n")
+	fmt.Println("\033[1;36m=== Restoring Backup ===\033[0m")
 
 	var backupPath string
 
@@ -342,7 +342,7 @@ func restoreAction(c *cli.Context) error {
 }
 
 func listAction(c *cli.Context) error {
-	fmt.Println("\033[1;36m=== Available Backups ===\033[0m\n")
+	fmt.Println("\033[1;36m=== Available Backups ===\033[0m")
 
 	// Local backups
 	fmt.Println("  \033[1;36mLocal:\033[0m")

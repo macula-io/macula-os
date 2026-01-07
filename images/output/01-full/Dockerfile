@@ -17,8 +17,8 @@ ARG ARCH
 
 COPY --from=kernel /output/vmlinuz /output/maculaos-vmlinuz-${ARCH}
 COPY --from=kernel /output/initrd /output/maculaos-initrd-${ARCH}
-COPY --from=kernel /output/kernel.squashfs /output/macula-kernel-${ARCH}.squashfs
-COPY --from=kernel /output/version /output/macula-kernel-version-${ARCH}
+COPY --from=kernel /output/kernel.squashfs /output/maculaos-kernel-${ARCH}.squashfs
+COPY --from=kernel /output/version /output/maculaos-kernel-version-${ARCH}
 COPY --from=iso /output/maculaos.iso /output/maculaos-${ARCH}.iso
-COPY --from=tar /output/userspace.tar /output/macula-rootfs-${ARCH}.tar
-RUN gzip /output/macula-rootfs-${ARCH}.tar
+COPY --from=tar /output/userspace.tar /output/maculaos-rootfs-${ARCH}.tar
+RUN gzip /output/maculaos-rootfs-${ARCH}.tar
