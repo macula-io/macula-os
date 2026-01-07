@@ -2,5 +2,36 @@
 
 source $SCRIPTS/live
 
-pinfo Dropping to shell
-exec bash
+# Display recovery mode banner
+cat << 'EOF'
+
+╔══════════════════════════════════════════════════════════════════╗
+║                  MaculaOS Recovery Mode                          ║
+╠══════════════════════════════════════════════════════════════════╣
+║                                                                  ║
+║  You are in a minimal rescue shell. The root filesystem is      ║
+║  mounted read-write. k3s and other services are NOT running.    ║
+║                                                                  ║
+║  Common commands:                                                ║
+║    maculaos diag           - Run system diagnostics             ║
+║    maculaos factory-reset  - Reset to factory defaults          ║
+║    maculaos config         - View/edit configuration            ║
+║    fsck /dev/sdX           - Check filesystem                   ║
+║    mount -o remount,rw /   - Remount root read-write            ║
+║    exit                    - Reboot system                      ║
+║                                                                  ║
+║  Networking:                                                     ║
+║    ip addr                 - Show IP addresses                  ║
+║    dhclient eth0           - Get DHCP address                   ║
+║    ping 8.8.8.8            - Test connectivity                  ║
+║                                                                  ║
+║  Logs:                                                           ║
+║    dmesg | tail            - Kernel messages                    ║
+║    cat /var/log/messages   - System log                         ║
+║                                                                  ║
+╚══════════════════════════════════════════════════════════════════╝
+
+EOF
+
+pinfo "Dropping to rescue shell (type 'exit' to reboot)"
+exec bash --login

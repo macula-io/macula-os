@@ -1,0 +1,58 @@
+#!/bin/sh
+# MaculaOS Watchdog Daemon
+# Simple daemon that feeds the hardware watchdog periodically
+
+set -e
+
+DEVICE="/dev/watchdog"
+TIMEOUT=60
+INTERVAL=30
+
+# Parse arguments
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --device=*)
+            DEVICE="${1#--device=}"
+            ;;
+        --timeout=*)
+            TIMEOUT="${1#--timeout=}"
+            ;;
+        --interval=*)
+            INTERVAL="${1#--interval=}"
+            ;;
+        *)
+            echo "Unknown option: $1" >&2
+            exit 1
+            ;;
+    esac
+    shift
+done
+
+# Check device exists
+if [ ! -e "$DEVICE" ]; then
+    echo "Watchdog device $DEVICE not found" >&2
+    exit 1
+fi
+
+# Set up signal handlers for clean shutdown
+cleanup() {
+    # Write magic close character to disable watchdog on clean shutdown
+    # 'V' is the magic close character
+    printf 'V' > "$DEVICE" 2>/dev/null || true
+    exit 0
+}
+
+trap cleanup INT TERM
+
+echo "Watchdog daemon started"
+echo "  Device: $DEVICE"
+echo "  Interval: ${INTERVAL}s"
+
+# Open watchdog device and keep feeding it
+exec 3>"$DEVICE"
+
+while true; do
+    # Write anything to feed the watchdog
+    printf '\0' >&3
+    sleep "$INTERVAL"
+done

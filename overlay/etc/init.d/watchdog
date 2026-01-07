@@ -1,0 +1,66 @@
+#!/sbin/openrc-run
+# MaculaOS Hardware Watchdog Service
+# Keeps the system alive by feeding the hardware watchdog
+
+description="Hardware Watchdog Service"
+
+WATCHDOG_DEV="${WATCHDOG_DEV:-/dev/watchdog}"
+WATCHDOG_TIMEOUT="${WATCHDOG_TIMEOUT:-60}"
+WATCHDOG_INTERVAL="${WATCHDOG_INTERVAL:-30}"
+PIDFILE="/run/watchdog.pid"
+
+depend() {
+    need localmount
+    after bootmisc
+}
+
+checkconfig() {
+    if [ ! -e "${WATCHDOG_DEV}" ]; then
+        eerror "Watchdog device ${WATCHDOG_DEV} not found"
+        eerror "Your hardware may not support watchdog, or the kernel module is not loaded"
+        return 1
+    fi
+    return 0
+}
+
+start() {
+    checkconfig || return 1
+
+    ebegin "Starting hardware watchdog"
+
+    # Load watchdog kernel modules if not loaded
+    modprobe softdog 2>/dev/null || true
+    modprobe iTCO_wdt 2>/dev/null || true
+
+    # Start the watchdog daemon
+    start-stop-daemon --start --background --make-pidfile \
+        --pidfile "${PIDFILE}" \
+        --exec /usr/sbin/watchdog-daemon -- \
+        --device="${WATCHDOG_DEV}" \
+        --timeout="${WATCHDOG_TIMEOUT}" \
+        --interval="${WATCHDOG_INTERVAL}"
+
+    eend $?
+}
+
+stop() {
+    ebegin "Stopping hardware watchdog"
+
+    # Properly close watchdog to prevent immediate reboot
+    # The magic close feature must be supported
+    if [ -f "${PIDFILE}" ]; then
+        start-stop-daemon --stop --pidfile "${PIDFILE}"
+    fi
+
+    eend $?
+}
+
+status() {
+    if [ -f "${PIDFILE}" ] && kill -0 $(cat "${PIDFILE}") 2>/dev/null; then
+        einfo "Watchdog is running (PID: $(cat ${PIDFILE}))"
+        return 0
+    else
+        einfo "Watchdog is not running"
+        return 3
+    fi
+}

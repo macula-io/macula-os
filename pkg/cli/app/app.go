@@ -4,8 +4,11 @@ import (
 	"fmt"
 
 	"github.com/macula-io/macula-os/pkg/cli/config"
+	"github.com/macula-io/macula-os/pkg/cli/diag"
+	"github.com/macula-io/macula-os/pkg/cli/encrypt"
 	"github.com/macula-io/macula-os/pkg/cli/install"
 	"github.com/macula-io/macula-os/pkg/cli/rc"
+	"github.com/macula-io/macula-os/pkg/cli/reset"
 	"github.com/macula-io/macula-os/pkg/cli/upgrade"
 	"github.com/macula-io/macula-os/pkg/version"
 	"github.com/sirupsen/logrus"
@@ -40,6 +43,9 @@ func New() *cli.App {
 		config.Command(),
 		install.Command(),
 		upgrade.Command(),
+		diag.Command(),
+		reset.Command(),
+		encrypt.Command(),
 	}
 
 	app.Before = func(c *cli.Context) error {

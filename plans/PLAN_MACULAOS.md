@@ -1625,11 +1625,11 @@ Prioritized implementation roadmap.
 | Boot and basic operation | 1-3 | ✅ Done |
 | First-boot pairing | 5.2 | ✅ Done |
 | A/B updates with rollback | 4.8 | 🔄 Partial |
-| Recovery mode | 4.10.1 | ⬜ TODO |
-| Factory reset | 4.10.2 | ⬜ TODO |
-| Hardware watchdog | 4.17.1 | ⬜ TODO |
-| Encryption at rest | 4.13.1 | ⬜ TODO |
-| Basic diagnostics | 4.10.4 | ⬜ TODO |
+| Recovery mode | 4.10.1 | ✅ Done |
+| Factory reset | 4.10.2 | ✅ Done |
+| Hardware watchdog | 4.17.1 | ✅ Done |
+| Encryption at rest | 4.13.1 | ✅ Done |
+| Basic diagnostics | 4.10.4 | ✅ Done |
 
 ### v1.1 - Edge Ready (Should Have)
 
