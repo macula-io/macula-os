@@ -1,6 +1,6 @@
 # MaculaOS - Custom Linux Distribution Plan
 
-**Status:** Planning
+**Status:** In Progress (Phase 1)
 **Created:** 2026-01-07
 **Repository:** `macula-io/macula-os`
 **Based on:** k3OS (rancher/k3os fork)
@@ -344,13 +344,34 @@ spec:
 
 **Goal:** Get k3OS building from our fork
 
-- [ ] Fork rancher/k3os to macula-io/macula-os
-- [ ] Update Alpine base to latest LTS (3.19+)
-- [ ] Update Linux kernel to latest LTS (6.1+)
-- [ ] Verify amd64 build completes
+- [x] Fork rancher/k3os to macula-io/macula-os
+- [x] Update Alpine base to latest LTS (3.20)
+- [x] Update Linux kernel to latest LTS (6.6.x via Alpine linux-lts)
+- [x] Complete k3os -> MaculaOS rebranding (Go code, scripts, Dockerfiles)
+- [x] Verify amd64 build completes (2026-01-07)
 - [ ] Verify arm64 build completes
 - [ ] Test boot in QEMU
 - [ ] Document build process
+
+**Rebranding completed (2026-01-07):**
+- Go module: `github.com/rancher/k3os` → `github.com/macula-io/macula-os`
+- CLI app: `k3os` → `maculaos`
+- System paths: `/k3os/system` → `/macula/system`, `/run/k3os` → `/run/macula`
+- Environment vars: `K3OS_*` → `MACULA_*` / `MACULAOS_*`
+- Docker images: `k3os-*` → `macula-*`
+- Partition labels: `K3OS_STATE` → `MACULA_STATE`
+- Boot params: `k3os.mode` → `macula.mode`
+
+**Build artifacts (amd64) - 2026-01-07:**
+- `maculaos-amd64.iso` - 1.5GB bootable ISO
+- `macula-rootfs-amd64.tar.gz` - 1.5GB root filesystem
+- `macula-kernel-amd64.squashfs` - 656MB kernel squashfs
+- `maculaos-initrd-amd64` - 723MB initramfs
+- `maculaos-vmlinuz-amd64` - 11MB Linux kernel
+- Docker image: `maculacid/maculaos:dev`
+
+**Build fixes (2026-01-07):**
+- Changed `-mod=readonly` to `-mod=vendor` in `images/20-progs/Dockerfile` to fix Go module resolution
 
 **Files to modify:**
 - `images/00-base/Dockerfile` - Alpine version

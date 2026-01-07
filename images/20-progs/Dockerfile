@@ -20,7 +20,7 @@ COPY /pkg/ $GOPATH/src/github.com/macula-io/macula-os/pkg/
 COPY /main.go $GOPATH/src/github.com/macula-io/macula-os/
 COPY /vendor/ $GOPATH/src/github.com/macula-io/macula-os/vendor/
 WORKDIR $GOPATH/src/github.com/macula-io/macula-os
-RUN gobuild -mod=readonly -o /output/maculaos
+RUN gobuild -mod=vendor -o /output/maculaos
 
 FROM gobuild
 COPY --from=linuxkit /output/ /output/
