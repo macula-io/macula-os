@@ -23,11 +23,28 @@ RUN cp /usr/src/kernel/version /output/ && \
     cp /usr/src/kernel/vmlinuz /output/
 
 COPY --from=bin /output/ /usr/src/macula/
+
+# Add kmod utilities for module loading (required for loop device)
+# kmod requires: libz (/lib), liblzma (/usr/lib), libzstd (/usr/lib), libcrypto (/lib), musl libc (/lib)
+RUN apk add kmod && cd /usr/src/initrd && \
+    mkdir -p bin sbin lib && \
+    cp /bin/kmod bin/ && \
+    ln -s kmod bin/modprobe && \
+    ln -s kmod bin/insmod && \
+    ln -s kmod bin/rmmod && \
+    ln -s kmod bin/lsmod && \
+    ln -s ../bin/kmod sbin/modprobe && \
+    cp /lib/libz.so.1* lib/ && \
+    cp /usr/lib/liblzma.so.5* lib/ && \
+    cp /usr/lib/libzstd.so.1* lib/ && \
+    cp /lib/libcrypto.so.3 lib/ && \
+    cp /lib/ld-musl-x86_64.so.1 lib/
+
 RUN cd /usr/src/initrd && \
     mkdir -p macula/system/macula/${TAG} && \
     cp /usr/src/macula/maculaos macula/system/macula/${TAG} && \
     ln -s ${TAG} macula/system/macula/current && \
     ln -s /macula/system/macula/current/maculaos init
-    
+
 RUN cd /usr/src/initrd && \
     find . | cpio -H newc -o | gzip -c -1 > /output/initrd

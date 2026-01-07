@@ -54,8 +54,12 @@ func ensureloop() error {
 		return errors.Wrapf(err, "failed to mount dev")
 	}
 
-	// ignore error
-	exec.Command("modprobe", "loop").Run()
+	// Try to load loop module - try multiple paths since PATH may not be set in initrd
+	for _, path := range []string{"/sbin/modprobe", "/bin/modprobe", "modprobe"} {
+		if err := exec.Command(path, "loop").Run(); err == nil {
+			break
+		}
+	}
 
 	if err := mknod("/dev/loop-control", 0700|unix.S_IFCHR, 10, 237); err != nil {
 		return err

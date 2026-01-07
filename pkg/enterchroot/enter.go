@@ -295,7 +295,12 @@ func run(data string) error {
 
 func checkSquashfs() error {
 	if !inProcFS() {
-		exec.Command("modprobe", "squashfs").Run()
+		// Try multiple paths since PATH may not be set in initrd
+		for _, path := range []string{"/sbin/modprobe", "/bin/modprobe", "modprobe"} {
+			if err := exec.Command(path, "squashfs").Run(); err == nil {
+				break
+			}
+		}
 	}
 
 	if !inProcFS() {
