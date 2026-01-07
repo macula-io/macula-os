@@ -543,6 +543,239 @@ maculaos:
 - User can manually rollback anytime via `maculaos upgrade --rollback`
 - Previous version always preserved until next successful update
 
+### 4.9 Embedded Infrastructure Services (NEW)
+
+MaculaOS includes built-in infrastructure services optimized for edge and offline operation.
+
+#### 4.9.1 Local Git Server (GitOps)
+
+For offline/air-gapped GitOps workflows without requiring internet access.
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  Local GitOps Architecture                                  │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  ┌──────────────┐     ┌──────────────┐     ┌────────────┐  │
+│  │   Upstream   │     │  Local Git   │     │   Flux     │  │
+│  │   (GitHub)   │────▶│   Server     │────▶│ Controller │  │
+│  │              │sync │ (soft-serve) │watch│            │  │
+│  └──────────────┘     └──────────────┘     └────────────┘  │
+│                              │                     │        │
+│                              ▼                     ▼        │
+│                       ┌────────────┐       ┌────────────┐  │
+│                       │   Local    │       │    k3s     │  │
+│                       │   Repos    │       │  Workloads │  │
+│                       └────────────┘       └────────────┘  │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**Server Options:**
+
+| Server | Size | Features | Recommendation |
+|--------|------|----------|----------------|
+| **soft-serve** | ~20MB | SSH access, TUI, lightweight | Default |
+| **gitea** | ~100MB | Full web UI, issues, PRs | Optional |
+| **git-daemon** | ~0 | Read-only, simplest | Minimal installs |
+
+**Configuration:**
+
+```yaml
+maculaos:
+  gitops:
+    enabled: true
+    server: soft-serve           # soft-serve, gitea, or git-daemon
+    port: 23231                  # SSH port for soft-serve
+    data_path: /var/lib/maculaos/git
+    upstream_sync:
+      enabled: true              # Sync from upstream when online
+      url: https://github.com/org/fleet-repo
+      interval: 5m               # Sync interval
+```
+
+#### 4.9.2 P2P Image Registry
+
+Share container images between mesh nodes without central registry.
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  P2P Registry with Spegel                                   │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  ┌────────┐  ┌────────┐  ┌────────┐                        │
+│  │ Node 1 │══│ Node 2 │══│ Node 3 │   P2P image sharing    │
+│  │┌──────┐│  │┌──────┐│  │┌──────┐│                        │
+│  ││Spegel││══││Spegel││══││Spegel││                        │
+│  │└──────┘│  │└──────┘│  │└──────┘│                        │
+│  └────────┘  └────────┘  └────────┘                        │
+│       │           │           │                             │
+│       └───────────┴───────────┘                             │
+│                   │ (only if image not in mesh)             │
+│                   ▼                                         │
+│            ┌──────────────┐                                 │
+│            │   Upstream   │                                 │
+│            │  (ghcr.io)   │                                 │
+│            └──────────────┘                                 │
+│                                                             │
+│  Flow:                                                      │
+│  1. Node needs image → ask mesh peers first                │
+│  2. If peer has it → P2P transfer (fast, local)            │
+│  3. If not → pull from upstream, share with mesh           │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**Registry Options:**
+
+| Registry | Size | P2P Native | Notes |
+|----------|------|------------|-------|
+| **Spegel** | ~10MB | Yes | k8s-native, containerd integration |
+| **Zot** | ~30MB | Sync API | OCI-native, lightweight |
+| **distribution** | ~20MB | No | Official Docker registry |
+
+**Configuration:**
+
+```yaml
+maculaos:
+  registry:
+    enabled: true
+    mode: spegel                 # spegel (P2P) or local (single-node cache)
+    pull_through_cache: true     # Cache upstream pulls locally
+    mirrors:
+      docker.io: []              # Use mesh + upstream
+      ghcr.io: []
+      quay.io: []
+```
+
+#### 4.9.3 Observability Stack
+
+Built-in monitoring and logging for edge nodes.
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  Edge Observability                                         │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  Metrics:                                                   │
+│  ┌────────────────┐     ┌────────────────┐                 │
+│  │ Node Exporter  │────▶│ Local Storage  │──▶ (Mesh sync)  │
+│  │ (~10MB)        │     │ (Victoria)     │                 │
+│  └────────────────┘     └────────────────┘                 │
+│                                                             │
+│  Logs:                                                      │
+│  ┌────────────────┐     ┌────────────────┐                 │
+│  │  Fluent-bit    │────▶│ Local Buffer   │──▶ (Forward)    │
+│  │  (~15MB)       │     │                │                 │
+│  └────────────────┘     └────────────────┘                 │
+│                                                             │
+│  Mesh Health:                                               │
+│  ┌────────────────┐                                        │
+│  │ macula-health  │  ← Custom health checks                │
+│  │ (built-in)     │    - Mesh connectivity                 │
+│  └────────────────┘    - Peer count, latency               │
+│                        - Storage health                     │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**Configuration:**
+
+```yaml
+maculaos:
+  observability:
+    metrics:
+      enabled: true
+      node_exporter: true        # System metrics
+      retention: 7d              # Local retention
+      mesh_sync: true            # Sync to mesh aggregator
+    logs:
+      enabled: true
+      driver: fluent-bit         # fluent-bit or vector
+      retention: 3d              # Local retention
+      forward_to: ""             # Optional: central aggregator
+```
+
+#### 4.9.4 Security Services
+
+Built-in security infrastructure for edge operation.
+
+| Service | Purpose | Size | Default |
+|---------|---------|------|---------|
+| **WireGuard** | Mesh VPN tunnels | ~1MB (kernel) | Enabled |
+| **Local CA** | Issue node certificates | Built-in | Enabled |
+| **Firewall** | iptables/nftables management | ~0 | Enabled |
+| **Fail2ban** | Brute-force protection | ~5MB | Optional |
+
+**Configuration:**
+
+```yaml
+maculaos:
+  security:
+    wireguard:
+      enabled: true
+      mesh_interface: wg-mesh    # Interface name
+      port: 51820
+    firewall:
+      enabled: true
+      default_policy: drop       # drop or accept
+      allow_mesh: true           # Allow mesh traffic
+      allow_ssh: true            # Allow SSH (port 22)
+    local_ca:
+      enabled: true
+      path: /var/lib/maculaos/ca
+```
+
+#### 4.9.5 Edge-Specific Services
+
+Services optimized for IoT/edge workloads.
+
+| Service | Purpose | Size | Use Case |
+|---------|---------|------|----------|
+| **Mosquitto** | MQTT broker | ~5MB | IoT sensors, home automation |
+| **SQLite** | Local database | ~1MB | App state, caching |
+| **Chrony** | NTP client/server | ~2MB | Time sync (critical for mesh) |
+| **Power mgmt** | Battery/solar aware | ~1MB | Mobile/solar deployments |
+
+**Configuration:**
+
+```yaml
+maculaos:
+  edge:
+    mqtt:
+      enabled: false             # Enable for IoT workloads
+      port: 1883
+      websocket_port: 9001
+    time_sync:
+      enabled: true
+      servers:
+        - pool.ntp.org
+      serve_to_lan: true         # Act as NTP server for LAN devices
+    power:
+      enabled: false             # Enable for battery/solar
+      shutdown_threshold: 10%    # Graceful shutdown at 10% battery
+      wakeup_schedule: ""        # Cron for scheduled wakeup
+```
+
+#### 4.9.6 Summary: Embedded vs Container-Deployed
+
+| Component | Embedded (in squashfs) | Container (via k3s) | Rationale |
+|-----------|------------------------|---------------------|-----------|
+| k3s | ✅ | - | Core orchestrator |
+| Macula mesh | ✅ | - | Core networking |
+| soft-serve (git) | ✅ | - | GitOps foundation |
+| Spegel (registry) | ✅ | - | Image distribution |
+| Fluent-bit | ✅ | - | System logging |
+| Node exporter | ✅ | - | System metrics |
+| WireGuard | ✅ (kernel) | - | Secure tunnels |
+| Mosquitto | Optional | ✅ | IoT-specific |
+| Grafana | - | ✅ | Heavy, optional UI |
+| Loki | - | ✅ | Log aggregation |
+| MinIO | - | ✅ | Object storage |
+| Longhorn | - | ✅ | Distributed storage |
+| Ollama | - | ✅ | Edge AI (large) |
+
+**Total embedded infrastructure:** ~80MB additional (beyond base OS)
+
 ---
 
 ## 5. Component Details
