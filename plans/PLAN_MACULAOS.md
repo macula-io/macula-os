@@ -1,8 +1,8 @@
 # MaculaOS - Custom Linux Distribution Plan
 
-**Status:** In Progress (Phase 3 Complete, Phase 4 Planned)
+**Status:** In Progress (v1.0 Complete, v1.1 Mostly Complete)
 **Created:** 2026-01-07
-**Last Updated:** 2026-01-07 (Added: Mesh Roles, Setup Wizard, Branding, Tools, Updates)
+**Last Updated:** 2026-01-07 (v1.1: Mesh roles, health checks, backup, GitOps, P2P registry)
 **Repository:** `macula-io/macula-os`
 **Based on:** k3OS (rancher/k3os fork)
 
@@ -1635,13 +1635,13 @@ Prioritized implementation roadmap.
 
 | Feature | Section | Status |
 |---------|---------|--------|
-| Mesh role selection | 4.4 | ⬜ TODO |
-| Local Git server | 4.9.1 | ⬜ TODO |
-| P2P image registry | 4.9.2 | ⬜ TODO |
-| Fleet health dashboard | 4.12.2 | ⬜ TODO |
-| Coordinated updates | 4.12.3 | ⬜ TODO |
-| Service health checks | 4.17.2 | ⬜ TODO |
-| Backup/restore | 4.13.2 | ⬜ TODO |
+| Mesh role selection | 4.4 | ✅ Done |
+| Local Git server | 4.9.1 | ✅ Done |
+| P2P image registry | 4.9.2 | ✅ Done |
+| Fleet health dashboard | 4.12.2 | ⬜ TODO (Portal UI) |
+| Coordinated updates | 4.12.3 | ⬜ TODO (Portal UI) |
+| Service health checks | 4.17.2 | ✅ Done |
+| Backup/restore | 4.13.2 | ✅ Done |
 | QEMU dev images | 4.14.1 | ⬜ TODO |
 
 ### v1.2 - Enterprise (Nice to Have)

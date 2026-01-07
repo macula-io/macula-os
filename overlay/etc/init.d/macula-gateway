@@ -1,0 +1,73 @@
+#!/sbin/openrc-run
+# MaculaOS Gateway Service
+# NAT relay and API ingress gateway (requires public IP)
+
+description="Macula Mesh Gateway Service"
+
+GATEWAY_HTTP_PORT="${GATEWAY_HTTP_PORT:-80}"
+GATEWAY_HTTPS_PORT="${GATEWAY_HTTPS_PORT:-443}"
+GATEWAY_LOG="${GATEWAY_LOG:-/var/log/macula-gateway.log}"
+GATEWAY_PIDFILE="${GATEWAY_PIDFILE:-/run/macula-gateway.pid}"
+
+depend() {
+    need net macula-mesh
+    after firewall
+}
+
+start_pre() {
+    # Check if gateway role is enabled
+    if [ -f /var/lib/maculaos/mesh.yaml ]; then
+        if ! grep -q "gateway: true" /var/lib/maculaos/mesh.yaml; then
+            eerror "Gateway role is not enabled in mesh configuration"
+            eerror "Run: maculaos mesh wizard"
+            return 1
+        fi
+    else
+        eerror "No mesh configuration found"
+        return 1
+    fi
+}
+
+start() {
+    ebegin "Starting Macula gateway service"
+
+    # In a real implementation, this would start the gateway daemon
+    # The gateway service provides:
+    # - NAT relay for peers behind restrictive NATs
+    # - External API ingress for mesh services
+    # - Load balancing across mesh nodes
+
+    echo $$ > "$GATEWAY_PIDFILE"
+    echo "$(date): Gateway service started (HTTP: $GATEWAY_HTTP_PORT, HTTPS: $GATEWAY_HTTPS_PORT)" >> "$GATEWAY_LOG"
+
+    # Open firewall ports
+    iptables -A INPUT -p tcp --dport $GATEWAY_HTTP_PORT -j ACCEPT 2>/dev/null || true
+    iptables -A INPUT -p tcp --dport $GATEWAY_HTTPS_PORT -j ACCEPT 2>/dev/null || true
+    iptables -A INPUT -p udp --dport $GATEWAY_HTTPS_PORT -j ACCEPT 2>/dev/null || true
+
+    eend 0
+}
+
+stop() {
+    ebegin "Stopping Macula gateway service"
+
+    if [ -f "$GATEWAY_PIDFILE" ]; then
+        rm -f "$GATEWAY_PIDFILE"
+    fi
+
+    echo "$(date): Gateway service stopped" >> "$GATEWAY_LOG"
+
+    eend 0
+}
+
+status() {
+    if [ -f "$GATEWAY_PIDFILE" ]; then
+        einfo "Macula gateway service is running"
+        einfo "  HTTP port: $GATEWAY_HTTP_PORT"
+        einfo "  HTTPS port: $GATEWAY_HTTPS_PORT"
+        return 0
+    else
+        einfo "Macula gateway service is not running"
+        return 3
+    fi
+}

@@ -1,0 +1,96 @@
+#!/sbin/openrc-run
+# MaculaOS Local Git Server (soft-serve)
+# Provides local GitOps capability for offline/air-gapped operation
+
+description="Soft Serve Git Server"
+
+SOFT_SERVE_BIN="${SOFT_SERVE_BIN:-/usr/bin/soft-serve}"
+SOFT_SERVE_DATA="${SOFT_SERVE_DATA:-/var/lib/maculaos/git}"
+SOFT_SERVE_PORT="${SOFT_SERVE_PORT:-23231}"
+SOFT_SERVE_LOG="${SOFT_SERVE_LOG:-/var/log/soft-serve.log}"
+SOFT_SERVE_PIDFILE="${SOFT_SERVE_PIDFILE:-/run/soft-serve.pid}"
+SOFT_SERVE_USER="${SOFT_SERVE_USER:-macula}"
+
+command="$SOFT_SERVE_BIN"
+command_args="serve"
+command_background="yes"
+pidfile="$SOFT_SERVE_PIDFILE"
+output_log="$SOFT_SERVE_LOG"
+error_log="$SOFT_SERVE_LOG"
+
+depend() {
+    need net
+    after localmount
+}
+
+start_pre() {
+    # Check if soft-serve is installed
+    if [ ! -x "$SOFT_SERVE_BIN" ]; then
+        ewarn "soft-serve not installed at $SOFT_SERVE_BIN"
+        ewarn "Install with: apk add soft-serve"
+        return 1
+    fi
+
+    # Check if GitOps is enabled in config
+    if [ -f /var/lib/maculaos/config.yaml ]; then
+        if grep -q "gitops:" /var/lib/maculaos/config.yaml; then
+            if ! grep -A1 "gitops:" /var/lib/maculaos/config.yaml | grep -q "enabled: true"; then
+                einfo "GitOps not enabled in configuration"
+                return 1
+            fi
+        fi
+    fi
+
+    # Create data directory
+    checkpath -d -m 0755 -o $SOFT_SERVE_USER "$SOFT_SERVE_DATA"
+
+    # Set environment
+    export SOFT_SERVE_DATA_PATH="$SOFT_SERVE_DATA"
+    export SOFT_SERVE_SSH_PORT="$SOFT_SERVE_PORT"
+}
+
+start() {
+    ebegin "Starting soft-serve git server on port $SOFT_SERVE_PORT"
+
+    export SOFT_SERVE_DATA_PATH="$SOFT_SERVE_DATA"
+    export SOFT_SERVE_SSH_PORT="$SOFT_SERVE_PORT"
+
+    start-stop-daemon --start \
+        --background \
+        --make-pidfile \
+        --pidfile "$SOFT_SERVE_PIDFILE" \
+        --stdout "$SOFT_SERVE_LOG" \
+        --stderr "$SOFT_SERVE_LOG" \
+        --exec "$SOFT_SERVE_BIN" -- serve
+
+    eend $?
+}
+
+stop() {
+    ebegin "Stopping soft-serve git server"
+
+    start-stop-daemon --stop \
+        --pidfile "$SOFT_SERVE_PIDFILE" \
+        --retry=TERM/30/KILL/5
+
+    eend $?
+}
+
+status() {
+    if [ -f "$SOFT_SERVE_PIDFILE" ] && kill -0 $(cat "$SOFT_SERVE_PIDFILE") 2>/dev/null; then
+        einfo "soft-serve is running"
+        einfo "  SSH port: $SOFT_SERVE_PORT"
+        einfo "  Data path: $SOFT_SERVE_DATA"
+
+        # Show repos if any
+        if [ -d "$SOFT_SERVE_DATA/repos" ]; then
+            REPO_COUNT=$(find "$SOFT_SERVE_DATA/repos" -maxdepth 1 -type d | wc -l)
+            einfo "  Repositories: $((REPO_COUNT - 1))"
+        fi
+
+        return 0
+    else
+        einfo "soft-serve is not running"
+        return 3
+    fi
+}

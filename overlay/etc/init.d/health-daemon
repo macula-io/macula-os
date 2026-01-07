@@ -1,0 +1,75 @@
+#!/sbin/openrc-run
+# MaculaOS Health Check Daemon
+# Continuous monitoring and auto-healing of system services
+
+description="MaculaOS Health Check Daemon"
+
+HEALTH_INTERVAL="${HEALTH_INTERVAL:-30}"
+HEALTH_LOG="${HEALTH_LOG:-/var/log/health-daemon.log}"
+HEALTH_PIDFILE="${HEALTH_PIDFILE:-/run/health-daemon.pid}"
+
+depend() {
+    need localmount
+    after k3s
+}
+
+start() {
+    ebegin "Starting health check daemon (interval: ${HEALTH_INTERVAL}s)"
+
+    start-stop-daemon --start \
+        --background \
+        --make-pidfile \
+        --pidfile "$HEALTH_PIDFILE" \
+        --stdout "$HEALTH_LOG" \
+        --stderr "$HEALTH_LOG" \
+        --exec /usr/bin/maculaos -- health watch --interval=$HEALTH_INTERVAL
+
+    eend $?
+}
+
+stop() {
+    ebegin "Stopping health check daemon"
+
+    start-stop-daemon --stop \
+        --pidfile "$HEALTH_PIDFILE" \
+        --retry=TERM/30/KILL/5
+
+    eend $?
+}
+
+status() {
+    if [ -f "$HEALTH_PIDFILE" ] && kill -0 $(cat "$HEALTH_PIDFILE") 2>/dev/null; then
+        einfo "Health check daemon is running"
+        einfo "  Check interval: ${HEALTH_INTERVAL}s"
+
+        # Show recent health status
+        if [ -f /var/lib/maculaos/health.yaml ]; then
+            CHECK_COUNT=$(grep -c "name:" /var/lib/maculaos/health.yaml 2>/dev/null || echo 0)
+            einfo "  Configured checks: $CHECK_COUNT"
+        fi
+
+        # Show last check result if available
+        if [ -f "$HEALTH_LOG" ]; then
+            LAST_LINE=$(tail -1 "$HEALTH_LOG" 2>/dev/null)
+            if [ -n "$LAST_LINE" ]; then
+                einfo "  Last activity: $LAST_LINE"
+            fi
+        fi
+
+        return 0
+    else
+        einfo "Health check daemon is not running"
+        return 3
+    fi
+}
+
+reload() {
+    ebegin "Reloading health check configuration"
+
+    # Send SIGHUP to reload config
+    if [ -f "$HEALTH_PIDFILE" ]; then
+        kill -HUP $(cat "$HEALTH_PIDFILE") 2>/dev/null
+    fi
+
+    eend $?
+}

@@ -1,0 +1,163 @@
+#!/sbin/openrc-run
+# MaculaOS P2P Image Registry (Spegel)
+# Share container images between mesh nodes without central registry
+
+description="Spegel P2P Container Image Registry"
+
+SPEGEL_BIN="${SPEGEL_BIN:-/usr/bin/spegel}"
+SPEGEL_PORT="${SPEGEL_PORT:-5001}"
+SPEGEL_REGISTRY_PORT="${SPEGEL_REGISTRY_PORT:-30020}"
+SPEGEL_LOG="${SPEGEL_LOG:-/var/log/spegel.log}"
+SPEGEL_PIDFILE="${SPEGEL_PIDFILE:-/run/spegel.pid}"
+
+# Containerd socket
+CONTAINERD_SOCK="${CONTAINERD_SOCK:-/run/k3s/containerd/containerd.sock}"
+
+depend() {
+    need net
+    after k3s
+}
+
+start_pre() {
+    # Check if spegel is installed
+    if [ ! -x "$SPEGEL_BIN" ]; then
+        ewarn "spegel not installed at $SPEGEL_BIN"
+        ewarn "Spegel will be deployed as a k3s DaemonSet instead"
+        return 1
+    fi
+
+    # Check containerd socket
+    if [ ! -S "$CONTAINERD_SOCK" ]; then
+        ewarn "Containerd socket not found at $CONTAINERD_SOCK"
+        ewarn "Waiting for k3s to start..."
+        return 1
+    fi
+}
+
+start() {
+    ebegin "Starting Spegel P2P registry"
+
+    # Spegel can run as:
+    # 1. Standalone binary (this init script)
+    # 2. k3s DaemonSet (recommended for mesh deployments)
+
+    # Check if running as DaemonSet
+    if kubectl get daemonset spegel -n kube-system >/dev/null 2>&1; then
+        einfo "Spegel is running as k3s DaemonSet"
+        return 0
+    fi
+
+    # Deploy as DaemonSet if not running standalone
+    if [ ! -x "$SPEGEL_BIN" ]; then
+        einfo "Deploying Spegel as k3s DaemonSet..."
+        deploy_daemonset
+        eend $?
+        return
+    fi
+
+    # Run as standalone
+    start-stop-daemon --start \
+        --background \
+        --make-pidfile \
+        --pidfile "$SPEGEL_PIDFILE" \
+        --stdout "$SPEGEL_LOG" \
+        --stderr "$SPEGEL_LOG" \
+        --exec "$SPEGEL_BIN" -- \
+            --containerd-sock="$CONTAINERD_SOCK" \
+            --registry-addr=":$SPEGEL_REGISTRY_PORT" \
+            --router-addr=":$SPEGEL_PORT"
+
+    eend $?
+}
+
+stop() {
+    ebegin "Stopping Spegel P2P registry"
+
+    # If running as DaemonSet, don't stop
+    if kubectl get daemonset spegel -n kube-system >/dev/null 2>&1; then
+        einfo "Spegel is running as k3s DaemonSet - not stopping"
+        return 0
+    fi
+
+    start-stop-daemon --stop \
+        --pidfile "$SPEGEL_PIDFILE" \
+        --retry=TERM/30/KILL/5
+
+    eend $?
+}
+
+status() {
+    # Check DaemonSet first
+    if kubectl get daemonset spegel -n kube-system >/dev/null 2>&1; then
+        einfo "Spegel is running as k3s DaemonSet"
+        READY=$(kubectl get daemonset spegel -n kube-system -o jsonpath='{.status.numberReady}' 2>/dev/null || echo 0)
+        DESIRED=$(kubectl get daemonset spegel -n kube-system -o jsonpath='{.status.desiredNumberScheduled}' 2>/dev/null || echo 0)
+        einfo "  Ready: $READY/$DESIRED"
+        return 0
+    fi
+
+    # Check standalone
+    if [ -f "$SPEGEL_PIDFILE" ] && kill -0 $(cat "$SPEGEL_PIDFILE") 2>/dev/null; then
+        einfo "Spegel is running (standalone)"
+        einfo "  Router port: $SPEGEL_PORT"
+        einfo "  Registry port: $SPEGEL_REGISTRY_PORT"
+        return 0
+    else
+        einfo "Spegel is not running"
+        return 3
+    fi
+}
+
+deploy_daemonset() {
+    # Deploy Spegel as k3s DaemonSet
+    cat <<'EOF' | kubectl apply -f -
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: spegel
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: spegel
+  namespace: spegel
+  labels:
+    app: spegel
+spec:
+  selector:
+    matchLabels:
+      app: spegel
+  template:
+    metadata:
+      labels:
+        app: spegel
+    spec:
+      hostNetwork: true
+      containers:
+      - name: spegel
+        image: ghcr.io/spegel-org/spegel:latest
+        args:
+          - --containerd-sock=/run/containerd/containerd.sock
+          - --registry-addr=:30020
+          - --router-addr=:5001
+          - --registries=docker.io,ghcr.io,quay.io,registry.k8s.io
+        securityContext:
+          privileged: true
+        volumeMounts:
+        - name: containerd-sock
+          mountPath: /run/containerd/containerd.sock
+        - name: containerd-content
+          mountPath: /var/lib/containerd
+      volumes:
+      - name: containerd-sock
+        hostPath:
+          path: /run/k3s/containerd/containerd.sock
+          type: Socket
+      - name: containerd-content
+        hostPath:
+          path: /var/lib/rancher/k3s/agent/containerd
+          type: Directory
+      tolerations:
+      - operator: Exists
+EOF
+}

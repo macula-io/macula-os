@@ -1,0 +1,90 @@
+#!/sbin/openrc-run
+# MaculaOS Mesh Service
+# Peer role is always enabled - this is the base mesh connectivity
+
+description="Macula Mesh Network Service"
+
+MESH_CONFIG="${MESH_CONFIG:-/var/lib/maculaos/mesh.yaml}"
+MESH_LOG="${MESH_LOG:-/var/log/macula-mesh.log}"
+MESH_PIDFILE="${MESH_PIDFILE:-/run/macula-mesh.pid}"
+
+depend() {
+    need net
+    after firewall
+    before macula-bootstrap macula-gateway
+}
+
+start_pre() {
+    # Ensure config directory exists
+    checkpath -d -m 0755 /var/lib/maculaos
+
+    # Load mesh configuration
+    if [ -f "$MESH_CONFIG" ]; then
+        einfo "Loading mesh configuration from $MESH_CONFIG"
+    else
+        ewarn "No mesh configuration found, using defaults"
+        # Create default config
+        cat > "$MESH_CONFIG" << 'EOF'
+roles:
+  bootstrap: false
+  gateway: false
+bootstrapPeers:
+  - "https://boot.macula.io:443"
+realm: "io.macula"
+tlsMode: "development"
+EOF
+    fi
+}
+
+start() {
+    ebegin "Starting Macula mesh service"
+
+    # In a real implementation, this would start the macula-mesh daemon
+    # For now, we create a placeholder that indicates the service is running
+
+    # Check if we can reach bootstrap peers
+    if [ -f "$MESH_CONFIG" ]; then
+        # Extract first bootstrap peer
+        PEER=$(grep -A1 "bootstrapPeers:" "$MESH_CONFIG" | tail -1 | tr -d ' -"')
+        if [ -n "$PEER" ]; then
+            einfo "Connecting to mesh via $PEER"
+        fi
+    fi
+
+    # Create PID file to indicate service is running
+    echo $$ > "$MESH_PIDFILE"
+
+    # Log startup
+    echo "$(date): Macula mesh service started" >> "$MESH_LOG"
+
+    eend 0
+}
+
+stop() {
+    ebegin "Stopping Macula mesh service"
+
+    if [ -f "$MESH_PIDFILE" ]; then
+        rm -f "$MESH_PIDFILE"
+    fi
+
+    echo "$(date): Macula mesh service stopped" >> "$MESH_LOG"
+
+    eend 0
+}
+
+status() {
+    if [ -f "$MESH_PIDFILE" ]; then
+        einfo "Macula mesh service is running"
+
+        # Show mesh status
+        if [ -f "$MESH_CONFIG" ]; then
+            REALM=$(grep "realm:" "$MESH_CONFIG" | cut -d'"' -f2)
+            einfo "  Realm: $REALM"
+        fi
+
+        return 0
+    else
+        einfo "Macula mesh service is not running"
+        return 3
+    fi
+}

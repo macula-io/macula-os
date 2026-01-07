@@ -3,10 +3,13 @@ package app
 import (
 	"fmt"
 
+	"github.com/macula-io/macula-os/pkg/cli/backup"
 	"github.com/macula-io/macula-os/pkg/cli/config"
 	"github.com/macula-io/macula-os/pkg/cli/diag"
 	"github.com/macula-io/macula-os/pkg/cli/encrypt"
+	"github.com/macula-io/macula-os/pkg/cli/health"
 	"github.com/macula-io/macula-os/pkg/cli/install"
+	"github.com/macula-io/macula-os/pkg/cli/mesh"
 	"github.com/macula-io/macula-os/pkg/cli/rc"
 	"github.com/macula-io/macula-os/pkg/cli/reset"
 	"github.com/macula-io/macula-os/pkg/cli/upgrade"
@@ -46,6 +49,9 @@ func New() *cli.App {
 		diag.Command(),
 		reset.Command(),
 		encrypt.Command(),
+		mesh.Command(),
+		health.Command(),
+		backup.Command(),
 	}
 
 	app.Before = func(c *cli.Context) error {

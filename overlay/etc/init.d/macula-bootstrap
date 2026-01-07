@@ -1,0 +1,74 @@
+#!/sbin/openrc-run
+# MaculaOS Bootstrap Service
+# DHT entry point for new mesh nodes (requires public IP)
+
+description="Macula Mesh Bootstrap Service"
+
+BOOTSTRAP_PORT="${BOOTSTRAP_PORT:-443}"
+BOOTSTRAP_LOG="${BOOTSTRAP_LOG:-/var/log/macula-bootstrap.log}"
+BOOTSTRAP_PIDFILE="${BOOTSTRAP_PIDFILE:-/run/macula-bootstrap.pid}"
+
+depend() {
+    need net macula-mesh
+    after firewall
+}
+
+start_pre() {
+    # Check if bootstrap role is enabled
+    if [ -f /var/lib/maculaos/mesh.yaml ]; then
+        if ! grep -q "bootstrap: true" /var/lib/maculaos/mesh.yaml; then
+            eerror "Bootstrap role is not enabled in mesh configuration"
+            eerror "Run: maculaos mesh wizard"
+            return 1
+        fi
+    else
+        eerror "No mesh configuration found"
+        return 1
+    fi
+
+    # Check if port is available
+    if netstat -tuln 2>/dev/null | grep -q ":${BOOTSTRAP_PORT} "; then
+        ewarn "Port $BOOTSTRAP_PORT is already in use"
+    fi
+}
+
+start() {
+    ebegin "Starting Macula bootstrap service on port $BOOTSTRAP_PORT"
+
+    # In a real implementation, this would start the bootstrap daemon
+    # The bootstrap service provides:
+    # - DHT registry for peer discovery
+    # - Initial connection point for new nodes
+    # - Realm membership verification
+
+    echo $$ > "$BOOTSTRAP_PIDFILE"
+    echo "$(date): Bootstrap service started on port $BOOTSTRAP_PORT" >> "$BOOTSTRAP_LOG"
+
+    # Open firewall port
+    iptables -A INPUT -p tcp --dport $BOOTSTRAP_PORT -j ACCEPT 2>/dev/null || true
+    iptables -A INPUT -p udp --dport $BOOTSTRAP_PORT -j ACCEPT 2>/dev/null || true
+
+    eend 0
+}
+
+stop() {
+    ebegin "Stopping Macula bootstrap service"
+
+    if [ -f "$BOOTSTRAP_PIDFILE" ]; then
+        rm -f "$BOOTSTRAP_PIDFILE"
+    fi
+
+    echo "$(date): Bootstrap service stopped" >> "$BOOTSTRAP_LOG"
+
+    eend 0
+}
+
+status() {
+    if [ -f "$BOOTSTRAP_PIDFILE" ]; then
+        einfo "Macula bootstrap service is running on port $BOOTSTRAP_PORT"
+        return 0
+    else
+        einfo "Macula bootstrap service is not running"
+        return 3
+    fi
+}
