@@ -20,7 +20,7 @@ MODE_WAIT_SECONDS=30
 
 while [ -z "$MODE" ] && (( MODE_WAIT_SECONDS > 0 )); do
 
-if [ -z "$MODE" ] && [ -n "$(blkid -L MACULA_STATE)" ]; then
+if [ -z "$MODE" ] && [ -n "$(blkid -L MACULAOS_STATE)" ]; then
     MODE=disk
 fi
 

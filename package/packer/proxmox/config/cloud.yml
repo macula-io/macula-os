@@ -19,6 +19,6 @@ write_files:
     owner: root
     permissions: '0644'
 
-macula:
+maculaos:
   datasource: cdrom
   password: YourSSHPasswordReplaceIt

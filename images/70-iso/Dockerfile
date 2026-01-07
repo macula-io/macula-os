@@ -22,7 +22,7 @@ COPY --from=package /output/ /usr/src/iso/
 
 COPY config.yaml /usr/src/iso/macula/system/
 RUN mkdir -p /output && \
-    grub-mkrescue -o /output/maculaos.iso /usr/src/iso/. -- -volid MACULA -joliet on && \
+    grub-mkrescue -o /output/maculaos.iso /usr/src/iso/. -- -volid MACULAOS -joliet on && \
     [ -e /output/maculaos.iso ] # grub-mkrescue doesn't exit non-zero on failure
 
 CMD ["run-kvm.sh"]

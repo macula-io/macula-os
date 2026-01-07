@@ -50,7 +50,7 @@ func isInstall(cfg *config.CloudConfig) (bool, error) {
 }
 
 func AskInstall(cfg *config.CloudConfig) error {
-	if cfg.Macula.Install.Silent {
+	if cfg.Maculaos.Install.Silent {
 		return nil
 	}
 
@@ -62,7 +62,7 @@ func AskInstall(cfg *config.CloudConfig) error {
 		return err
 	}
 
-	if cfg.Macula.Install.ConfigURL == "" {
+	if cfg.Maculaos.Install.ConfigURL == "" {
 		if err := AskGithub(cfg); err != nil {
 			return err
 		}
@@ -84,7 +84,7 @@ func AskInstall(cfg *config.CloudConfig) error {
 }
 
 func AskInstallDevice(cfg *config.CloudConfig) error {
-	if cfg.Macula.Install.Device != "" {
+	if cfg.Maculaos.Install.Device != "" {
 		return nil
 	}
 
@@ -98,7 +98,7 @@ func AskInstallDevice(cfg *config.CloudConfig) error {
 		return err
 	}
 
-	cfg.Macula.Install.Device = "/dev/" + fields[i]
+	cfg.Maculaos.Install.Device = "/dev/" + fields[i]
 	return nil
 }
 
@@ -108,7 +108,7 @@ func AskToken(cfg *config.CloudConfig, server bool) error {
 		err   error
 	)
 
-	if cfg.Macula.Token != "" {
+	if cfg.Maculaos.Token != "" {
 		return nil
 	}
 
@@ -121,7 +121,7 @@ func AskToken(cfg *config.CloudConfig, server bool) error {
 	} else {
 		token, err = questions.Prompt(msg+": ", "")
 	}
-	cfg.Macula.Token = token
+	cfg.Maculaos.Token = token
 
 	return err
 }
@@ -133,7 +133,7 @@ func isServer(cfg *config.CloudConfig) (bool, error) {
 	}
 	if mode == "live-server" {
 		return true, nil
-	} else if mode == "live-agent" || (cfg.Macula.ServerURL != "" && cfg.Macula.Token != "") {
+	} else if mode == "live-agent" || (cfg.Maculaos.ServerURL != "" && cfg.Maculaos.Token != "") {
 		return false, nil
 	}
 
@@ -147,7 +147,7 @@ func isServer(cfg *config.CloudConfig) (bool, error) {
 }
 
 func AskServerAgent(cfg *config.CloudConfig) error {
-	if cfg.Macula.ServerURL != "" {
+	if cfg.Maculaos.ServerURL != "" {
 		return nil
 	}
 
@@ -164,13 +164,13 @@ func AskServerAgent(cfg *config.CloudConfig) error {
 	if err != nil {
 		return err
 	}
-	cfg.Macula.ServerURL = url
+	cfg.Maculaos.ServerURL = url
 
 	return AskToken(cfg, false)
 }
 
 func AskPassword(cfg *config.CloudConfig) error {
-	if len(cfg.SSHAuthorizedKeys) > 0 || cfg.Macula.Password != "" {
+	if len(cfg.SSHAuthorizedKeys) > 0 || cfg.Maculaos.Password != "" {
 		return nil
 	}
 
@@ -188,7 +188,7 @@ func AskPassword(cfg *config.CloudConfig) error {
 	}
 
 	if os.Getuid() != 0 {
-		cfg.Macula.Password = pass
+		cfg.Maculaos.Password = pass
 		return nil
 	}
 
@@ -221,7 +221,7 @@ func AskPassword(cfg *config.CloudConfig) error {
 	for scanner.Scan() {
 		fields := strings.Split(scanner.Text(), ":")
 		if len(fields) > 1 && fields[0] == "rancher" {
-			cfg.Macula.Password = fields[1]
+			cfg.Maculaos.Password = fields[1]
 			return nil
 		}
 	}
@@ -230,7 +230,7 @@ func AskPassword(cfg *config.CloudConfig) error {
 }
 
 func AskWifi(cfg *config.CloudConfig) error {
-	if len(cfg.Macula.Wifi) > 0 {
+	if len(cfg.Maculaos.Wifi) > 0 {
 		return nil
 	}
 
@@ -250,7 +250,7 @@ func AskWifi(cfg *config.CloudConfig) error {
 			return err
 		}
 
-		cfg.Macula.Wifi = append(cfg.Macula.Wifi, config.Wifi{
+		cfg.Maculaos.Wifi = append(cfg.Maculaos.Wifi, config.Wifi{
 			Name:       name,
 			Passphrase: pass,
 		})
@@ -263,7 +263,7 @@ func AskWifi(cfg *config.CloudConfig) error {
 }
 
 func AskGithub(cfg *config.CloudConfig) error {
-	if len(cfg.SSHAuthorizedKeys) > 0 || cfg.Macula.Password != "" {
+	if len(cfg.SSHAuthorizedKeys) > 0 || cfg.Maculaos.Password != "" {
 		return nil
 	}
 
@@ -285,7 +285,7 @@ func AskGithub(cfg *config.CloudConfig) error {
 }
 
 func AskConfigURL(cfg *config.CloudConfig) error {
-	if cfg.Macula.Install.ConfigURL != "" {
+	if cfg.Maculaos.Install.ConfigURL != "" {
 		return nil
 	}
 
@@ -303,6 +303,6 @@ func AskConfigURL(cfg *config.CloudConfig) error {
 		return err
 	}
 
-	cfg.Macula.Install.ConfigURL = str
+	cfg.Maculaos.Install.ConfigURL = str
 	return nil
 }

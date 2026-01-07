@@ -43,8 +43,8 @@ All artifacts are output to `./dist/artifacts`.
 MaculaOS uses a YAML configuration format. Configuration is stored at:
 
 ```
-/macula/system/config.yaml     # System config (read-only)
-/var/lib/macula/config.yaml    # Runtime config
+/maculaos/system/config.yaml     # System config (read-only)
+/var/lib/maculaos/config.yaml    # Runtime config
 ```
 
 ### Sample config.yaml
@@ -55,7 +55,7 @@ ssh_authorized_keys:
 
 hostname: my-macula-node
 
-macula:
+maculaos:
   dns_nameservers:
     - 1.1.1.1
     - 8.8.8.8

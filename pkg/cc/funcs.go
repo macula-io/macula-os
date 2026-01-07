@@ -36,7 +36,7 @@ func ApplyHostname(cfg *config.CloudConfig) error {
 }
 
 func ApplyPassword(cfg *config.CloudConfig) error {
-	return command.SetPassword(cfg.Macula.Password)
+	return command.SetPassword(cfg.Maculaos.Password)
 }
 
 func ApplyRuncmd(cfg *config.CloudConfig) error {
@@ -94,7 +94,7 @@ func ApplyK3S(cfg *config.CloudConfig, restart, install bool) error {
 		k3sLocalExists = true
 	}
 
-	args := cfg.Macula.K3sArgs
+	args := cfg.Maculaos.K3sArgs
 	vars := []string{
 		"INSTALL_K3S_NAME=service",
 	}
@@ -117,25 +117,25 @@ func ApplyK3S(cfg *config.CloudConfig, restart, install bool) error {
 		vars = append(vars, "INSTALL_K3S_SKIP_START=true")
 	}
 
-	if cfg.Macula.ServerURL == "" {
+	if cfg.Maculaos.ServerURL == "" {
 		if len(args) == 0 {
 			args = append(args, "server")
 		}
 	} else {
-		vars = append(vars, fmt.Sprintf("K3S_URL=%s", cfg.Macula.ServerURL))
+		vars = append(vars, fmt.Sprintf("K3S_URL=%s", cfg.Maculaos.ServerURL))
 		if len(args) == 0 {
 			args = append(args, "agent")
 		}
 	}
 
-	if strings.HasPrefix(cfg.Macula.Token, "K10") {
-		vars = append(vars, fmt.Sprintf("K3S_TOKEN=%s", cfg.Macula.Token))
-	} else if cfg.Macula.Token != "" {
-		vars = append(vars, fmt.Sprintf("K3S_CLUSTER_SECRET=%s", cfg.Macula.Token))
+	if strings.HasPrefix(cfg.Maculaos.Token, "K10") {
+		vars = append(vars, fmt.Sprintf("K3S_TOKEN=%s", cfg.Maculaos.Token))
+	} else if cfg.Maculaos.Token != "" {
+		vars = append(vars, fmt.Sprintf("K3S_CLUSTER_SECRET=%s", cfg.Maculaos.Token))
 	}
 
 	var labels []string
-	for k, v := range cfg.Macula.Labels {
+	for k, v := range cfg.Maculaos.Labels {
 		labels = append(labels, fmt.Sprintf("%s=%s", k, v))
 	}
 	if mode != "" {
@@ -148,7 +148,7 @@ func ApplyK3S(cfg *config.CloudConfig, restart, install bool) error {
 		args = append(args, "--node-label", l)
 	}
 
-	for _, taint := range cfg.Macula.Taints {
+	for _, taint := range cfg.Maculaos.Taints {
 		args = append(args, "--kubelet-arg", "register-with-taints="+taint)
 	}
 
@@ -183,8 +183,8 @@ func ApplyDNS(cfg *config.CloudConfig) error {
 	buf.WriteString("[General]\n")
 	buf.WriteString("NetworkInterfaceBlacklist=veth\n")
 	buf.WriteString("PreferredTechnologies=ethernet,wifi\n")
-	if len(cfg.Macula.DNSNameservers) > 0 {
-		dns := strings.Join(cfg.Macula.DNSNameservers, ",")
+	if len(cfg.Maculaos.DNSNameservers) > 0 {
+		dns := strings.Join(cfg.Maculaos.DNSNameservers, ",")
 		buf.WriteString("FallbackNameservers=")
 		buf.WriteString(dns)
 		buf.WriteString("\n")
@@ -192,8 +192,8 @@ func ApplyDNS(cfg *config.CloudConfig) error {
 		buf.WriteString("FallbackNameservers=8.8.8.8\n")
 	}
 
-	if len(cfg.Macula.NTPServers) > 0 {
-		ntp := strings.Join(cfg.Macula.NTPServers, ",")
+	if len(cfg.Maculaos.NTPServers) > 0 {
+		ntp := strings.Join(cfg.Maculaos.NTPServers, ",")
 		buf.WriteString("FallbackTimeservers=")
 		buf.WriteString(ntp)
 		buf.WriteString("\n")
@@ -208,7 +208,7 @@ func ApplyDNS(cfg *config.CloudConfig) error {
 }
 
 func ApplyWifi(cfg *config.CloudConfig) error {
-	if len(cfg.Macula.Wifi) == 0 {
+	if len(cfg.Maculaos.Wifi) == 0 {
 		return nil
 	}
 
@@ -233,7 +233,7 @@ func ApplyWifi(cfg *config.CloudConfig) error {
 	buf.WriteString("Name=cloud-config\n")
 	buf.WriteString("Description=Services defined in the cloud-config\n")
 
-	for i, w := range cfg.Macula.Wifi {
+	for i, w := range cfg.Maculaos.Wifi {
 		name := fmt.Sprintf("wifi%d", i)
 		buf.WriteString("[service_")
 		buf.WriteString(name)
@@ -255,11 +255,11 @@ func ApplyWifi(cfg *config.CloudConfig) error {
 }
 
 func ApplyDataSource(cfg *config.CloudConfig) error {
-	if len(cfg.Macula.DataSources) == 0 {
+	if len(cfg.Maculaos.DataSources) == 0 {
 		return nil
 	}
 
-	args := strings.Join(cfg.Macula.DataSources, " ")
+	args := strings.Join(cfg.Maculaos.DataSources, " ")
 	buf := &bytes.Buffer{}
 
 	buf.WriteString("command_args=\"")
@@ -274,10 +274,10 @@ func ApplyDataSource(cfg *config.CloudConfig) error {
 }
 
 func ApplyEnvironment(cfg *config.CloudConfig) error {
-	if len(cfg.Macula.Environment) == 0 {
+	if len(cfg.Maculaos.Environment) == 0 {
 		return nil
 	}
-	env := make(map[string]string, len(cfg.Macula.Environment))
+	env := make(map[string]string, len(cfg.Maculaos.Environment))
 	if buf, err := ioutil.ReadFile("/etc/environment"); err == nil {
 		scanner := bufio.NewScanner(bytes.NewReader(buf))
 		for scanner.Scan() {
@@ -301,7 +301,7 @@ func ApplyEnvironment(cfg *config.CloudConfig) error {
 			}
 		}
 	}
-	for key, val := range cfg.Macula.Environment {
+	for key, val := range cfg.Maculaos.Environment {
 		env[key] = val
 	}
 	buf := &bytes.Buffer{}

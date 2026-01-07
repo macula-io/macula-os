@@ -26,7 +26,7 @@ func LoadModules(cfg *config.CloudConfig) error {
 	for sc.Scan() {
 		loaded[strings.SplitN(sc.Text(), " ", 2)[0]] = true
 	}
-	modules := cfg.Macula.Modules
+	modules := cfg.Maculaos.Modules
 	for _, m := range modules {
 		if loaded[m] {
 			continue

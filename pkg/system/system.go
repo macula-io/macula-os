@@ -8,7 +8,7 @@ const (
 	// DefaultDataDir represents where persistent state is located
 	DefaultDataDir = "/macula/data"
 	// DefaultLocalDir represents where local, persistent configuration is located
-	DefaultLocalDir = "/var/lib/macula"
+	DefaultLocalDir = "/var/lib/maculaos"
 	// DefaultStateDir represents where ephemeral state is located
 	DefaultStateDir = "/run/macula"
 )

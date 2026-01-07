@@ -8,9 +8,9 @@ setup_motd()
 
 setup_base()
 {
-    MACULA_ISO=$(blkid -L MACULA || true)
-    if [ -n "$MACULA_ISO" ]; then
-        mount -o ro $(blkid -L MACULA) /.base
+    MACULAOS_ISO=$(blkid -L MACULAOS || true)
+    if [ -n "$MACULAOS_ISO" ]; then
+        mount -o ro $(blkid -L MACULAOS) /.base
     else
         success=false
         for (( j=0; j < 5 ; j++ )); do

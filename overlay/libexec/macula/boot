@@ -123,15 +123,15 @@ setup_hostname()
         return 0
     fi
 
-    if [ -e /var/lib/macula/hostname ]; then
-        cp /var/lib/macula/hostname /etc/hostname
+    if [ -e /var/lib/maculaos/hostname ]; then
+        cp /var/lib/maculaos/hostname /etc/hostname
         return 0
     fi
 
-    mkdir -p /var/lib/macula
+    mkdir -p /var/lib/maculaos
     HOSTNAME=macula-${RANDOM}
-    echo $HOSTNAME > /var/lib/macula/hostname
-    cp /var/lib/macula/hostname /etc/hostname
+    echo $HOSTNAME > /var/lib/maculaos/hostname
+    cp /var/lib/maculaos/hostname /etc/hostname
 
 }
 
@@ -184,7 +184,7 @@ grow_live()
         if [ ! -e "${DEV}${NUM}" ]; then
             # /dev/sda2 => /dev/sda2
             # /dev/nvme0n1p2 => /dev/nvme0n1p2
-            PART=$(blkid -L MACULA_STATE)
+            PART=$(blkid -L MACULAOS_STATE)
 
             # /dev/sda2 => /dev/sda
             # /dev/nvme0n1p2 => /dev/nvme0n1

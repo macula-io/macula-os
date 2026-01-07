@@ -1,5 +1,5 @@
 # MaculaOS Default Configuration
-# Copy this file to /var/lib/macula/config.yaml and customize as needed.
+# Copy this file to /var/lib/maculaos/config.yaml and customize as needed.
 # See https://github.com/macula-io/macula-os for documentation.
 
 # Hostname pattern: macula-{MAC} is used if not specified
@@ -10,7 +10,7 @@
 #   - ssh-rsa AAAA... user@example.com
 
 # MaculaOS-specific configuration
-macula:
+maculaos:
   # Data sources for cloud-init style configuration
   # Options: aws, gce, digitalocean, packet, cdrom, none
   # dataSources:

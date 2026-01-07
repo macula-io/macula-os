@@ -55,7 +55,7 @@ usage()
     echo ""
     echo "Example: $PROG /dev/vda https://github.com/macula-io/macula-os/releases/download/v1.0.0/maculaos.iso"
     echo ""
-    echo "DEVICE must be the disk that will be partitioned (/dev/vda). If you are using --no-format it should be the device of the MACULA_STATE partition (/dev/vda2)"
+    echo "DEVICE must be the disk that will be partitioned (/dev/vda). If you are using --no-format it should be the device of the MACULAOS_STATE partition (/dev/vda2)"
     echo ""
     echo "The parameters names refer to the same names used in the cmdline, refer to README.md for"
     echo "more info."
@@ -66,10 +66,10 @@ usage()
 do_format()
 {
     if [ "$MACULA_INSTALL_NO_FORMAT" = "true" ]; then
-        STATE=$(blkid -L MACULA_STATE || true)
+        STATE=$(blkid -L MACULAOS_STATE || true)
         if [ -z "$STATE" ] && [ -n "$DEVICE" ]; then
-            tune2fs -L MACULA_STATE $DEVICE
-            STATE=$(blkid -L MACULA_STATE)
+            tune2fs -L MACULAOS_STATE $DEVICE
+            STATE=$(blkid -L MACULAOS_STATE)
         fi
 
         return 0
@@ -106,7 +106,7 @@ do_format()
     fi
     STATE=${PREFIX}${STATE_NUM}
 
-    mkfs.ext4 -F -L MACULA_STATE ${STATE}
+    mkfs.ext4 -F -L MACULAOS_STATE ${STATE}
     if [ -n "${BOOT}" ]; then
         mkfs.vfat -F 32 ${BOOT}
         fatlabel ${BOOT} MACULA_GRUB
@@ -166,7 +166,7 @@ insmod all_video
 insmod gfxterm
 
 menuentry "MaculaOS Current" {
-  search.fs_label MACULA_STATE root
+  search.fs_label MACULAOS_STATE root
   set sqfile=/macula/system/kernel/current/kernel.squashfs
   loopback loop0 /\$sqfile
   set root=(\$root)
@@ -175,7 +175,7 @@ menuentry "MaculaOS Current" {
 }
 
 menuentry "MaculaOS Previous" {
-  search.fs_label MACULA_STATE root
+  search.fs_label MACULAOS_STATE root
   set sqfile=/macula/system/kernel/previous/kernel.squashfs
   loopback loop0 /\$sqfile
   set root=(\$root)
@@ -184,7 +184,7 @@ menuentry "MaculaOS Previous" {
 }
 
 menuentry "MaculaOS Rescue (current)" {
-  search.fs_label MACULA_STATE root
+  search.fs_label MACULAOS_STATE root
   set sqfile=/macula/system/kernel/current/kernel.squashfs
   loopback loop0 /\$sqfile
   set root=(\$root)
@@ -193,7 +193,7 @@ menuentry "MaculaOS Rescue (current)" {
 }
 
 menuentry "MaculaOS Rescue (previous)" {
-  search.fs_label MACULA_STATE root
+  search.fs_label MACULAOS_STATE root
   set sqfile=/macula/system/kernel/previous/kernel.squashfs
   loopback loop0 /\$sqfile
   set root=(\$root)
@@ -228,11 +228,11 @@ EOF
 get_iso()
 {
 
-    ### When booting install media from USB, there is a chance that the MACULA label
+    ### When booting install media from USB, there is a chance that the MACULAOS label
     ### will detect the proper partition.  For that reason, we allow the admin
     ### to explicitly set the ISO_DEVICE variable before invoking install
     if [ -z "${ISO_DEVICE}" ]; then
-        ISO_DEVICE=$(blkid -L MACULA || true)
+        ISO_DEVICE=$(blkid -L MACULAOS || true)
     fi
 
     if [ -z "${ISO_DEVICE}" ]; then

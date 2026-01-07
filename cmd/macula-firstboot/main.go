@@ -27,8 +27,8 @@ var templatesFS embed.FS
 var staticFS embed.FS
 
 const (
-	configuredFlag = "/var/lib/macula/.configured"
-	credentialsDir = "/var/lib/macula/credentials"
+	configuredFlag = "/var/lib/maculaos/.configured"
+	credentialsDir = "/var/lib/maculaos/credentials"
 	defaultPort    = 80
 	portalURL      = "https://macula.io"
 )
