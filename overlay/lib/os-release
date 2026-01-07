@@ -1,0 +1,10 @@
+NAME="MaculaOS"
+VERSION="MaculaOS %VERSION%"
+ID=maculaos
+ID_LIKE=alpine
+PRETTY_NAME="MaculaOS %VERSION%"
+VERSION_ID="%VERSION%"
+HOME_URL="https://macula.io/"
+SUPPORT_URL="https://github.com/macula-io/macula-os"
+BUG_REPORT_URL="https://github.com/macula-io/macula-os/issues"
+ISO_URL="https://github.com/macula-io/macula-os/releases/download/%VERSION%/macula-os-%ARCH%.iso"
