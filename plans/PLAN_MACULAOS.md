@@ -776,6 +776,895 @@ maculaos:
 
 **Total embedded infrastructure:** ~80MB additional (beyond base OS)
 
+### 4.10 Recovery & Troubleshooting (NEW)
+
+Ensure nodes can always be recovered, even in worst-case scenarios.
+
+#### 4.10.1 Recovery Mode
+
+Dedicated rescue environment accessible from bootloader.
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  Boot Menu                                                  │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  1. MaculaOS (normal boot)                                  │
+│  2. MaculaOS (previous version)         ← Rollback          │
+│  3. Recovery Mode                        ← Rescue shell     │
+│  4. Factory Reset                        ← Wipe & reinstall │
+│                                                             │
+│  Auto-boot in 5 seconds...                                  │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**Recovery Mode Features:**
+- Minimal BusyBox environment (runs from initrd)
+- Network access for remote troubleshooting
+- Mount/unmount data partitions
+- Repair filesystem errors
+- Reset passwords
+- Restore from backup
+
+**Implementation:**
+```yaml
+# Kernel cmdline for recovery
+macula.mode=recovery
+
+# Recovery services started:
+- SSH server (on port 22)
+- Serial console
+- Network (DHCP)
+```
+
+#### 4.10.2 Factory Reset
+
+One-command reset to clean installation state.
+
+```bash
+# From running system
+maculaos factory-reset --confirm
+
+# From recovery mode
+factory-reset
+
+# From bootloader (hold button during boot)
+# Physical button support for headless devices
+```
+
+**Factory Reset Behavior:**
+| Data | Action |
+|------|--------|
+| OS (squashfs) | Keep current version |
+| `/var/lib/maculaos/` | **WIPED** (config, credentials) |
+| `/var/lib/rancher/k3s/` | **WIPED** (k3s state, pods) |
+| User data (`/var/lib/data/`) | Optional: keep or wipe |
+
+#### 4.10.3 Remote Console Access
+
+Multiple fallback paths for remote access.
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  Remote Access Fallback Chain                               │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  1. SSH (port 22)          ← Primary                        │
+│     └── Key-based auth                                      │
+│                                                             │
+│  2. Macula Mesh RPC        ← If SSH unreachable            │
+│     └── Console UI remote shell                            │
+│                                                             │
+│  3. Serial Console         ← Physical access               │
+│     └── 115200 baud, ttyS0/ttyUSB0                         │
+│                                                             │
+│  4. Out-of-Band (IPMI/iLO) ← Enterprise hardware           │
+│     └── Optional integration                               │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+#### 4.10.4 Built-in Diagnostics
+
+```bash
+# Network diagnostics
+maculaos diag network
+  ✓ Interface eth0: UP, 192.168.1.100/24
+  ✓ Default gateway: 192.168.1.1 (reachable)
+  ✓ DNS: 1.1.1.1 (resolving)
+  ✓ Internet: google.com (reachable)
+  ✓ Mesh bootstrap: boot.macula.io (connected)
+
+# Storage diagnostics
+maculaos diag storage
+  ✓ Root partition: 45% used (healthy)
+  ✓ Data partition: 23% used (healthy)
+  ✓ SMART status: OK
+
+# Mesh diagnostics
+maculaos diag mesh
+  ✓ Mesh status: Connected
+  ✓ Peers: 12 (3 direct, 9 relayed)
+  ✓ Realm: io.macula
+  ✓ Role: Peer
+  ✓ Latency to bootstrap: 23ms
+
+# Full system report (for support)
+maculaos diag --full > /tmp/support-bundle.tar.gz
+```
+
+### 4.11 Hardware Support (NEW)
+
+Hardware compatibility and driver support.
+
+#### 4.11.1 Supported Platforms
+
+| Platform | Architecture | Status | Notes |
+|----------|--------------|--------|-------|
+| Generic x86_64 | amd64 | ✅ Supported | Primary target |
+| Intel NUC | amd64 | ✅ Supported | Tested |
+| Raspberry Pi 4/5 | arm64 | 🔄 Planned | Community priority |
+| NVIDIA Jetson | arm64 | 🔄 Planned | AI edge |
+| Generic ARM64 | arm64 | 🔄 Planned | Server-class |
+| Rockchip (Pine64, etc.) | arm64 | ❓ Community | Best-effort |
+
+#### 4.11.2 Hardware Security
+
+| Feature | Support | Notes |
+|---------|---------|-------|
+| **TPM 2.0** | 🔄 Planned | Secure boot, secret storage |
+| **Secure Boot** | 🔄 Planned | Signed kernel/initrd |
+| **Hardware RNG** | ✅ Supported | `/dev/hwrng` if available |
+| **Hardware Watchdog** | ✅ Supported | Auto-reboot on hang |
+
+**TPM Integration (Future):**
+```yaml
+maculaos:
+  security:
+    tpm:
+      enabled: true
+      seal_secrets: true       # Seal secrets to TPM
+      measured_boot: true      # Measure boot chain
+```
+
+#### 4.11.3 Accelerators & GPUs
+
+| Device | Support | Use Case |
+|--------|---------|----------|
+| **Google Coral** | 🔄 Planned | Edge TPU for ML inference |
+| **Intel Movidius** | 🔄 Planned | Neural compute stick |
+| **NVIDIA GPU** | 🔄 Planned | CUDA, AI training |
+| **AMD GPU** | ❓ Future | ROCm support |
+
+**GPU Container Support (via k3s):**
+```yaml
+# When GPU support enabled
+maculaos:
+  hardware:
+    gpu:
+      enabled: true
+      runtime: nvidia          # nvidia or intel
+```
+
+#### 4.11.4 IoT & Peripherals
+
+| Interface | Support | Notes |
+|-----------|---------|-------|
+| **GPIO (RPi)** | 🔄 Planned | `/dev/gpiochip0` |
+| **I2C** | 🔄 Planned | Sensor buses |
+| **SPI** | 🔄 Planned | Display, peripherals |
+| **USB Serial** | ✅ Supported | `/dev/ttyUSB*` |
+| **Bluetooth** | 🔄 Planned | BLE for IoT |
+| **Zigbee/Z-Wave** | 🔄 Planned | USB dongles |
+
+#### 4.11.5 Networking Hardware
+
+| Interface | Support | Notes |
+|-----------|---------|-------|
+| **Ethernet** | ✅ Supported | Primary |
+| **WiFi** | ✅ Supported | wpa_supplicant |
+| **LTE/5G Modem** | 🔄 Planned | ModemManager |
+| **LoRa** | ❓ Future | IoT long-range |
+| **Satellite (Starlink)** | ❓ Future | High-latency handling |
+
+**Cellular Modem Configuration:**
+```yaml
+maculaos:
+  network:
+    cellular:
+      enabled: true
+      apn: "internet"
+      pin: ""                  # SIM PIN if required
+      failover: true           # Failover from ethernet/wifi
+```
+
+### 4.12 Fleet Management (NEW)
+
+Managing multiple MaculaOS nodes at scale.
+
+#### 4.12.1 Fleet Overview
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  Fleet Management Architecture                              │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  ┌──────────────────────────────────────────────────────┐  │
+│  │                   Macula Portal                       │  │
+│  │  ┌──────────┐  ┌──────────┐  ┌──────────┐           │  │
+│  │  │  Fleet   │  │  Health  │  │  Update  │           │  │
+│  │  │ Registry │  │ Monitor  │  │ Manager  │           │  │
+│  │  └──────────┘  └──────────┘  └──────────┘           │  │
+│  └──────────────────────────────────────────────────────┘  │
+│                           │                                 │
+│           ┌───────────────┼───────────────┐                │
+│           ▼               ▼               ▼                │
+│      ┌────────┐      ┌────────┐      ┌────────┐           │
+│      │ Node 1 │      │ Node 2 │      │ Node N │           │
+│      │ edge-01│      │ edge-02│      │ edge-N │           │
+│      └────────┘      └────────┘      └────────┘           │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+#### 4.12.2 Fleet Health Dashboard
+
+Via Macula Console/Portal:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  Fleet Health                                    [Refresh]  │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  Summary: 47 nodes │ 45 healthy │ 2 degraded │ 0 offline   │
+│                                                             │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │ Node          │ Status │ Version │ Uptime │ CPU/Mem │   │
+│  ├─────────────────────────────────────────────────────┤   │
+│  │ edge-warehouse-01 │ ✅ │ 1.2.0 │ 45d │ 12%/34% │       │
+│  │ edge-warehouse-02 │ ✅ │ 1.2.0 │ 45d │ 8%/28%  │       │
+│  │ edge-store-nyc-01 │ ⚠️ │ 1.1.9 │ 12d │ 89%/78% │       │
+│  │ edge-store-nyc-02 │ ⚠️ │ 1.1.9 │ 12d │ 45%/56% │       │
+│  │ ...                                                 │   │
+│  └─────────────────────────────────────────────────────┘   │
+│                                                             │
+│  [Update Selected] [Restart Selected] [View Logs]          │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+#### 4.12.3 Coordinated Updates
+
+Rolling updates across fleet with health checks.
+
+```yaml
+# Fleet update strategy
+fleet:
+  update:
+    strategy: rolling          # rolling, blue-green, canary
+    max_unavailable: 10%       # Max nodes updating at once
+    health_check_wait: 60s     # Wait for health after update
+    auto_rollback: true        # Rollback if health check fails
+
+    # Canary settings (if strategy: canary)
+    canary:
+      percentage: 5%           # Start with 5% of fleet
+      success_threshold: 95%   # Require 95% success to proceed
+```
+
+#### 4.12.4 Configuration Drift Detection
+
+Detect and remediate when nodes diverge from desired state.
+
+```bash
+# Check for drift
+maculaos fleet drift-check
+  ⚠️ edge-store-nyc-01: config.yaml differs (3 keys)
+  ⚠️ edge-store-nyc-02: extra package installed (htop)
+  ✓ 45 nodes: no drift detected
+
+# Remediate drift
+maculaos fleet drift-fix --dry-run
+maculaos fleet drift-fix --apply
+```
+
+#### 4.12.5 Remote Wipe / Decommissioning
+
+Secure removal of nodes from fleet.
+
+```bash
+# From Portal/Console
+maculaos fleet decommission edge-old-node --wipe
+
+# Actions:
+# 1. Revoke mesh credentials
+# 2. Remove from fleet registry
+# 3. Remote trigger factory reset
+# 4. Optionally: secure wipe (multiple passes)
+```
+
+### 4.13 Data & Storage Strategy (NEW)
+
+Data persistence, encryption, and backup strategies.
+
+#### 4.13.1 Encryption at Rest
+
+LUKS encryption for data partition.
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  Encrypted Storage Layout                                   │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  ┌──────────┐  ┌──────────┐  ┌────────────────────────┐   │
+│  │  boot    │  │ rootfs-A │  │      data (LUKS)       │   │
+│  │  (clear) │  │ (clear)  │  │  ┌──────────────────┐  │   │
+│  │          │  │          │  │  │  Decrypted FS    │  │   │
+│  │          │  │          │  │  │  /var/lib/...    │  │   │
+│  └──────────┘  └──────────┘  │  └──────────────────┘  │   │
+│                              └────────────────────────┘   │
+│                                                             │
+│  Key Storage Options:                                       │
+│  • TPM-sealed (if available)                               │
+│  • Passphrase (entered at boot)                            │
+│  • Network-fetched (enterprise key server)                 │
+│  • USB key (physical token)                                │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**Configuration:**
+```yaml
+maculaos:
+  storage:
+    encryption:
+      enabled: true
+      method: luks2            # luks2 or luks1
+      key_source: tpm          # tpm, passphrase, network, usb
+      cipher: aes-xts-plain64
+```
+
+#### 4.13.2 Backup & Restore
+
+Automated backup to mesh or cloud.
+
+```yaml
+maculaos:
+  backup:
+    enabled: true
+    schedule: "0 2 * * *"      # Daily at 2 AM
+    retention: 7               # Keep 7 backups
+    target: mesh               # mesh, s3, local
+
+    # What to backup
+    include:
+      - /var/lib/maculaos/     # Config, credentials
+      - /var/lib/data/         # User data
+    exclude:
+      - /var/lib/rancher/k3s/agent/containerd/  # Container layers (re-pullable)
+
+    # Mesh backup (replicate to N peers)
+    mesh:
+      replication_factor: 2    # Store on 2 other nodes
+
+    # S3 backup (enterprise)
+    s3:
+      endpoint: s3.amazonaws.com
+      bucket: macula-backups
+      prefix: "fleet/${NODE_ID}/"
+```
+
+**Restore:**
+```bash
+# List available backups
+maculaos backup list
+
+# Restore from backup
+maculaos backup restore --from mesh --date 2024-01-15
+maculaos backup restore --from s3 --latest
+```
+
+#### 4.13.3 Data Replication
+
+Sync critical data across mesh nodes.
+
+```yaml
+maculaos:
+  replication:
+    enabled: true
+    paths:
+      - path: /var/lib/maculaos/shared/
+        strategy: eventual      # eventual or strong
+        replicas: 3             # Replicate to 3 nodes
+```
+
+#### 4.13.4 Storage Quotas
+
+Prevent runaway disk usage.
+
+```yaml
+maculaos:
+  storage:
+    quotas:
+      k3s_images: 20G          # Container image cache
+      k3s_volumes: 50G         # PersistentVolumes
+      logs: 5G                 # System logs
+      user_data: unlimited     # /var/lib/data/
+```
+
+### 4.14 Developer Experience (NEW)
+
+Tools and workflows for developers building on MaculaOS.
+
+#### 4.14.1 Local Development
+
+Run MaculaOS locally for development.
+
+```bash
+# Option 1: QEMU VM
+maculaos-dev vm start
+# Starts QEMU with MaculaOS, port-forwards SSH and Console
+
+# Option 2: Docker container (limited, no k3s)
+docker run -it --privileged maculacid/maculaos:dev
+
+# Option 3: Multipass (macOS/Windows)
+multipass launch maculaos
+```
+
+**Dev VM Features:**
+- Pre-configured for development
+- Hot-reload config changes
+- Port forwarding (SSH, Console, k3s API)
+- Shared folder with host
+
+#### 4.14.2 SDK & CLI Tools
+
+```bash
+# Install MaculaOS SDK
+brew install maculaos-sdk  # macOS
+apt install maculaos-sdk   # Linux
+
+# Create new MaculaOS app
+maculaos-sdk new my-edge-app
+cd my-edge-app
+maculaos-sdk build
+maculaos-sdk deploy --target edge-01.local
+```
+
+#### 4.14.3 Custom Image Builder
+
+Build custom MaculaOS images with additional packages.
+
+```yaml
+# maculaos-custom.yaml
+base: maculaos:1.2.0
+
+# Additional Alpine packages
+packages:
+  - python3
+  - py3-pip
+  - opencv
+
+# Additional container images (pre-loaded)
+images:
+  - myregistry.io/my-app:latest
+
+# Custom overlay files
+overlay:
+  /etc/myapp/config.yaml: |
+    setting: value
+
+# Custom firstboot script
+firstboot:
+  - /opt/myapp/setup.sh
+```
+
+```bash
+# Build custom image
+maculaos-sdk build-image --config maculaos-custom.yaml
+
+# Output: maculaos-custom-1.2.0-amd64.iso
+```
+
+#### 4.14.4 Testing Framework
+
+```bash
+# Run MaculaOS integration tests
+maculaos-sdk test --target qemu
+
+# Test scenarios:
+# - Boot and reach Console
+# - Mesh connectivity
+# - App deployment
+# - Update and rollback
+# - Recovery mode
+```
+
+### 4.15 Enterprise Features (NEW)
+
+Features for enterprise deployments.
+
+#### 4.15.1 Role-Based Access Control (RBAC)
+
+```yaml
+maculaos:
+  rbac:
+    enabled: true
+    roles:
+      - name: admin
+        permissions: ["*"]
+      - name: operator
+        permissions: ["read:*", "restart:services", "view:logs"]
+      - name: viewer
+        permissions: ["read:*"]
+
+    users:
+      - username: alice
+        role: admin
+        ssh_keys: [...]
+      - username: bob
+        role: operator
+        ssh_keys: [...]
+```
+
+#### 4.15.2 Audit Logging
+
+Compliance audit trail for all actions.
+
+```yaml
+maculaos:
+  audit:
+    enabled: true
+    log_path: /var/log/maculaos/audit.log
+    retention: 90d             # Keep 90 days
+    forward_to: siem.corp.com  # Forward to SIEM
+
+    # What to audit
+    events:
+      - auth.login
+      - auth.logout
+      - config.change
+      - service.restart
+      - update.apply
+      - mesh.join
+      - mesh.leave
+```
+
+**Audit Log Format:**
+```json
+{
+  "timestamp": "2024-01-15T10:23:45Z",
+  "event": "config.change",
+  "user": "alice",
+  "source_ip": "192.168.1.100",
+  "details": {
+    "file": "/var/lib/maculaos/config.yaml",
+    "changes": ["network.dns_servers"]
+  }
+}
+```
+
+#### 4.15.3 LDAP/SSO Integration
+
+Enterprise identity integration.
+
+```yaml
+maculaos:
+  auth:
+    provider: ldap             # ldap, oidc, or local
+
+    ldap:
+      url: ldaps://ldap.corp.com:636
+      base_dn: "ou=users,dc=corp,dc=com"
+      bind_dn: "cn=maculaos,ou=services,dc=corp,dc=com"
+      bind_password_file: /var/lib/maculaos/secrets/ldap-password
+      user_filter: "(uid=%s)"
+      group_filter: "(memberOf=cn=maculaos-users,ou=groups,dc=corp,dc=com)"
+
+    oidc:
+      issuer: https://auth.corp.com
+      client_id: maculaos
+      client_secret_file: /var/lib/maculaos/secrets/oidc-secret
+```
+
+#### 4.15.4 Air-Gap Certificate Management
+
+Offline PKI for secure environments.
+
+```yaml
+maculaos:
+  pki:
+    mode: airgap               # online or airgap
+
+    airgap:
+      ca_cert: /var/lib/maculaos/ca/ca.crt
+      ca_key: /var/lib/maculaos/ca/ca.key
+      crl_update: usb          # usb, manual
+      cert_renewal: local      # Local CA signs renewals
+```
+
+### 4.16 Edge Computing Patterns (NEW)
+
+Patterns for edge workloads.
+
+#### 4.16.1 Edge Functions (FaaS)
+
+Lightweight serverless functions at edge.
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  Edge Functions Architecture                                │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  ┌──────────────────────────────────────────────────────┐  │
+│  │  HTTP Request                                         │  │
+│  │  POST /api/process-image                             │  │
+│  └──────────────────────────────────────────────────────┘  │
+│                           │                                 │
+│                           ▼                                 │
+│  ┌──────────────────────────────────────────────────────┐  │
+│  │  Edge Function Runtime (Spin/Wasmer/Deno)            │  │
+│  │  ┌────────────────────────────────────────────────┐  │  │
+│  │  │  function processImage(request) {              │  │  │
+│  │  │    const image = await request.blob();         │  │  │
+│  │  │    const result = await ml.classify(image);    │  │  │
+│  │  │    return Response.json(result);               │  │  │
+│  │  │  }                                             │  │  │
+│  │  └────────────────────────────────────────────────┘  │  │
+│  └──────────────────────────────────────────────────────┘  │
+│                                                             │
+│  Benefits:                                                  │
+│  • Cold start < 10ms (vs 100ms+ for containers)            │
+│  • Memory: ~10MB per function (vs 100MB+ for pods)         │
+│  • Sandboxed execution (WASM)                              │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**Configuration:**
+```yaml
+maculaos:
+  edge_functions:
+    enabled: true
+    runtime: spin              # spin, wasmer, or deno
+    port: 3000
+    functions_path: /var/lib/maculaos/functions/
+```
+
+#### 4.16.2 Data Pipelines
+
+Stream processing at edge.
+
+```yaml
+maculaos:
+  pipelines:
+    enabled: true
+    engine: benthos            # benthos or vector
+
+    # Example pipeline: sensor data processing
+    pipelines:
+      - name: sensor-ingest
+        input:
+          mqtt:
+            urls: ["tcp://localhost:1883"]
+            topics: ["sensors/#"]
+        processors:
+          - jq: '.temperature = (.temperature * 1.8 + 32)'  # C to F
+          - filter: '.temperature > 100'                    # Alert threshold
+        output:
+          http:
+            url: "https://api.example.com/alerts"
+```
+
+#### 4.16.3 ML Inference
+
+Optimized ML inference at edge.
+
+```yaml
+maculaos:
+  ml:
+    enabled: true
+    runtime: onnx              # onnx, tflite, or openvino
+    models_path: /var/lib/maculaos/models/
+
+    # Hardware acceleration
+    acceleration:
+      cpu: true
+      gpu: false               # Enable if GPU available
+      tpu: false               # Enable for Coral
+```
+
+**Pre-loaded Models (Optional):**
+- Object detection (YOLO, MobileNet)
+- Text classification
+- Anomaly detection
+
+#### 4.16.4 Edge Caching
+
+CDN-style caching at edge nodes.
+
+```yaml
+maculaos:
+  cache:
+    enabled: true
+    engine: varnish            # varnish or nginx
+    size: 10G
+
+    # Cache rules
+    rules:
+      - match: "*.jpg,*.png,*.webp"
+        ttl: 7d
+      - match: "/api/static/*"
+        ttl: 1h
+      - match: "/api/dynamic/*"
+        ttl: 0                 # No cache
+```
+
+### 4.17 Resilience & Self-Healing (NEW)
+
+Automatic recovery from failures.
+
+#### 4.17.1 Hardware Watchdog
+
+Auto-reboot on system hang.
+
+```yaml
+maculaos:
+  watchdog:
+    enabled: true
+    device: /dev/watchdog      # Hardware watchdog
+    timeout: 60                # Reboot if not fed for 60s
+
+    # Software watchdog (if no hardware)
+    software_fallback: true
+```
+
+**Implementation:**
+- Kernel hardware watchdog driver
+- systemd `watchdog` service
+- MaculaOS feeds watchdog every 30s
+- If system hangs → automatic reboot after 60s
+
+#### 4.17.2 Service Health Checks
+
+Auto-restart unhealthy services.
+
+```yaml
+maculaos:
+  health:
+    checks:
+      - name: k3s
+        type: process
+        process: k3s-server
+        restart_on_failure: true
+        max_restarts: 3
+
+      - name: mesh
+        type: http
+        url: http://localhost:8080/health
+        interval: 30s
+        timeout: 5s
+        restart_on_failure: true
+
+      - name: disk
+        type: disk
+        path: /var/lib
+        threshold: 90%         # Alert at 90% full
+        action: alert          # alert or cleanup
+```
+
+#### 4.17.3 Partition Tolerance
+
+Handle mesh network splits gracefully.
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  Split-Brain Handling                                       │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  Normal:                                                    │
+│  [Node A]═══[Node B]═══[Node C]═══[Node D]                 │
+│                                                             │
+│  Network Partition:                                         │
+│  [Node A]═══[Node B]   ║   [Node C]═══[Node D]             │
+│       Partition 1      ║      Partition 2                   │
+│                                                             │
+│  Behavior:                                                  │
+│  • Each partition continues operating                       │
+│  • Local services remain available                          │
+│  • Writes queue for sync when healed                       │
+│  • Eventually consistent (not strong)                       │
+│  • Automatic re-merge when connectivity restored           │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+#### 4.17.4 Auto-Healing Actions
+
+Automated remediation for common issues.
+
+| Issue | Detection | Auto-Action |
+|-------|-----------|-------------|
+| Disk full | `>90%` usage | Clean old logs, images |
+| OOM | Kernel OOM killer | Restart offending pod |
+| Service crash | Health check fail | Restart service (3x max) |
+| Network down | No connectivity | Restart network stack |
+| Mesh disconnect | No peers | Re-bootstrap mesh |
+| Clock drift | NTP check | Force time sync |
+
+```yaml
+maculaos:
+  auto_heal:
+    enabled: true
+
+    actions:
+      disk_cleanup:
+        trigger: disk_usage > 90%
+        action: |
+          journalctl --vacuum-size=100M
+          crictl rmi --prune
+
+      oom_restart:
+        trigger: oom_kill_detected
+        action: restart_pod
+        cooldown: 5m
+```
+
+---
+
+## 4.18 Priority Roadmap (NEW)
+
+Prioritized implementation roadmap.
+
+### v1.0 - Foundation (Must Have)
+
+| Feature | Section | Status |
+|---------|---------|--------|
+| Boot and basic operation | 1-3 | ✅ Done |
+| First-boot pairing | 5.2 | ✅ Done |
+| A/B updates with rollback | 4.8 | 🔄 Partial |
+| Recovery mode | 4.10.1 | ⬜ TODO |
+| Factory reset | 4.10.2 | ⬜ TODO |
+| Hardware watchdog | 4.17.1 | ⬜ TODO |
+| Encryption at rest | 4.13.1 | ⬜ TODO |
+| Basic diagnostics | 4.10.4 | ⬜ TODO |
+
+### v1.1 - Edge Ready (Should Have)
+
+| Feature | Section | Status |
+|---------|---------|--------|
+| Mesh role selection | 4.4 | ⬜ TODO |
+| Local Git server | 4.9.1 | ⬜ TODO |
+| P2P image registry | 4.9.2 | ⬜ TODO |
+| Fleet health dashboard | 4.12.2 | ⬜ TODO |
+| Coordinated updates | 4.12.3 | ⬜ TODO |
+| Service health checks | 4.17.2 | ⬜ TODO |
+| Backup/restore | 4.13.2 | ⬜ TODO |
+| QEMU dev images | 4.14.1 | ⬜ TODO |
+
+### v1.2 - Enterprise (Nice to Have)
+
+| Feature | Section | Status |
+|---------|---------|--------|
+| RBAC | 4.15.1 | ⬜ TODO |
+| Audit logging | 4.15.2 | ⬜ TODO |
+| LDAP/SSO | 4.15.3 | ⬜ TODO |
+| Edge functions | 4.16.1 | ⬜ TODO |
+| ML inference | 4.16.3 | ⬜ TODO |
+| Custom image builder | 4.14.3 | ⬜ TODO |
+
+### v2.0+ - Future
+
+| Feature | Section | Status |
+|---------|---------|--------|
+| TPM/Secure Boot | 4.11.2 | ⬜ Future |
+| GPU/NPU support | 4.11.3 | ⬜ Future |
+| Cellular modem | 4.11.5 | ⬜ Future |
+| Satellite support | 4.11.5 | ⬜ Future |
+| Air-gap PKI | 4.15.4 | ⬜ Future |
+
 ---
 
 ## 5. Component Details
