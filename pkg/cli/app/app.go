@@ -3,11 +3,11 @@ package app
 import (
 	"fmt"
 
-	"github.com/rancher/k3os/pkg/cli/config"
-	"github.com/rancher/k3os/pkg/cli/install"
-	"github.com/rancher/k3os/pkg/cli/rc"
-	"github.com/rancher/k3os/pkg/cli/upgrade"
-	"github.com/rancher/k3os/pkg/version"
+	"github.com/macula-io/macula-os/pkg/cli/config"
+	"github.com/macula-io/macula-os/pkg/cli/install"
+	"github.com/macula-io/macula-os/pkg/cli/rc"
+	"github.com/macula-io/macula-os/pkg/cli/upgrade"
+	"github.com/macula-io/macula-os/pkg/version"
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
 )
@@ -19,8 +19,8 @@ var (
 // New CLI App
 func New() *cli.App {
 	app := cli.NewApp()
-	app.Name = "k3os"
-	app.Usage = "Booting to k3s so you don't have to"
+	app.Name = "maculaos"
+	app.Usage = "Lightweight Linux for Macula edge nodes"
 	app.Version = version.Version
 	cli.VersionPrinter = func(c *cli.Context) {
 		fmt.Printf("%s version %s\n", app.Name, app.Version)
@@ -30,7 +30,7 @@ func New() *cli.App {
 		cli.BoolFlag{
 			Name:        "debug",
 			Usage:       "Turn on debug logs",
-			EnvVar:      "K3OS_DEBUG",
+			EnvVar:      "MACULAOS_DEBUG",
 			Destination: &Debug,
 		},
 	}

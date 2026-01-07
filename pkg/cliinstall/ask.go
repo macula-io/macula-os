@@ -9,10 +9,10 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/rancher/k3os/pkg/config"
-	"github.com/rancher/k3os/pkg/mode"
-	"github.com/rancher/k3os/pkg/questions"
-	"github.com/rancher/k3os/pkg/util"
+	"github.com/macula-io/macula-os/pkg/config"
+	"github.com/macula-io/macula-os/pkg/mode"
+	"github.com/macula-io/macula-os/pkg/questions"
+	"github.com/macula-io/macula-os/pkg/util"
 )
 
 func Ask(cfg *config.CloudConfig) (bool, error) {

@@ -7,12 +7,12 @@ import (
 	"os/exec"
 
 	"github.com/ghodss/yaml"
-	"github.com/rancher/k3os/pkg/config"
-	"github.com/rancher/k3os/pkg/questions"
+	"github.com/macula-io/macula-os/pkg/config"
+	"github.com/macula-io/macula-os/pkg/questions"
 )
 
 func Run() error {
-	fmt.Println("\nRunning k3OS configuration")
+	fmt.Println("\nRunning MaculaOS configuration")
 
 	cfg, err := config.ReadConfig()
 	if err != nil {
@@ -72,14 +72,14 @@ func runInstall(cfg config.CloudConfig) error {
 	if !cfg.K3OS.Install.Silent {
 		val, err := questions.PromptBool("\nConfiguration\n"+"-------------\n\n"+
 			string(installBytes)+
-			"\nYour disk will be formatted and k3OS will be installed with the above configuration.\nContinue?", false)
+			"\nYour disk will be formatted and MaculaOS will be installed with the above configuration.\nContinue?", false)
 		if err != nil || !val {
 			return err
 		}
 	}
 
 	if cfg.K3OS.Install.ConfigURL == "" {
-		tempFile, err = ioutil.TempFile("/tmp", "k3os.XXXXXXXX")
+		tempFile, err = ioutil.TempFile("/tmp", "maculaos.XXXXXXXX")
 		if err != nil {
 			return err
 		}
@@ -108,7 +108,7 @@ func runInstall(cfg config.CloudConfig) error {
 		defer os.Remove(tempFile.Name())
 	}
 
-	cmd := exec.Command("/usr/libexec/k3os/install")
+	cmd := exec.Command("/usr/libexec/macula/install")
 	cmd.Env = append(os.Environ(), ev...)
 	cmd.Stderr = os.Stderr
 	cmd.Stdout = os.Stdout

@@ -7,8 +7,8 @@ import (
 	"os/exec"
 	"path"
 
-	"github.com/rancher/k3os/pkg/config"
-	"github.com/rancher/k3os/pkg/util"
+	"github.com/macula-io/macula-os/pkg/config"
+	"github.com/macula-io/macula-os/pkg/util"
 	"github.com/sirupsen/logrus"
 )
 

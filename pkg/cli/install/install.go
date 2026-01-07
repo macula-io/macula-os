@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/rancher/k3os/pkg/cliinstall"
-	"github.com/rancher/k3os/pkg/mode"
+	"github.com/macula-io/macula-os/pkg/cliinstall"
+	"github.com/macula-io/macula-os/pkg/mode"
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
 )
@@ -14,7 +14,7 @@ func Command() cli.Command {
 	mode, _ := mode.Get()
 	return cli.Command{
 		Name:  "install",
-		Usage: "install k3OS",
+		Usage: "install MaculaOS",
 		Flags: []cli.Flag{},
 		Before: func(c *cli.Context) error {
 			if os.Getuid() != 0 {
