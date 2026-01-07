@@ -26,7 +26,7 @@ func SetAuthorizedKeys(cfg *config.CloudConfig, withNet bool) error {
 	if err != nil {
 		return err
 	}
-	uid, gid, homeDir, err := findUserHomeDir(bytes, "rancher")
+	uid, gid, homeDir, err := findUserHomeDir(bytes, "macula")
 	if err != nil {
 		return err
 	}

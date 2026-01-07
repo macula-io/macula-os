@@ -35,7 +35,7 @@ setup_ttys()
 setup_sudoers()
 {
     echo '%sudo   ALL = (ALL) ALL' > /etc/sudoers.d/sudo
-    echo 'rancher ALL = (ALL) NOPASSWD: ALL' >> /etc/sudoers.d/sudo
+    echo 'macula ALL = (ALL) NOPASSWD: ALL' >> /etc/sudoers.d/sudo
 }
 
 setup_services()
@@ -184,7 +184,7 @@ grow_live()
         if [ ! -e "${DEV}${NUM}" ]; then
             # /dev/sda2 => /dev/sda2
             # /dev/nvme0n1p2 => /dev/nvme0n1p2
-            PART=$(blkid -L K3OS_STATE)
+            PART=$(blkid -L MACULA_STATE)
 
             # /dev/sda2 => /dev/sda
             # /dev/nvme0n1p2 => /dev/nvme0n1

@@ -27,10 +27,10 @@ fi
 # DISK_NAME=test.img ./scripts/run-qemu macula.mode=install macula.install.silent macula.install.device=/dev/vda macula.install.power_off=true
 
 ## run installed vm
-# DISK_NAME=test.img ./scripts/run-qemu macula.password=rancher
+# DISK_NAME=test.img ./scripts/run-qemu macula.password=macula
 
 ## recover installed vm
-# DISK_NAME=test.img ./scripts/run-qemu macula.password=rancher macula.mode=live
+# DISK_NAME=test.img ./scripts/run-qemu macula.password=macula macula.mode=live
 
 exec $QEMU_SYSTEM \
     -m ${MEMORY:=2048} \

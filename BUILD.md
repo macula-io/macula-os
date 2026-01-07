@@ -84,7 +84,7 @@ MEMORY=4096 ./scripts/run-qemu macula.mode=live
 MEMORY=4096 ./scripts/run-qemu macula.mode=install macula.install.device=/dev/vda
 
 # Login credentials (live mode)
-# Username: rancher
+# Username: macula
 # Password: (shown on screen during boot)
 ```
 

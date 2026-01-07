@@ -5,7 +5,7 @@
 # Hostname pattern: macula-{MAC} is used if not specified
 # hostname: macula-edge-01
 
-# SSH authorized keys for the rancher user
+# SSH authorized keys for the macula user
 # ssh_authorized_keys:
 #   - ssh-rsa AAAA... user@example.com
 
@@ -40,9 +40,9 @@ macula:
   #   - name: MyNetwork
   #     passphrase: secret123
 
-  # Password for the rancher user (hash or plaintext)
-  # Default: rancher (displayed on boot screen if not changed)
-  # password: rancher
+  # Password for the macula user (hash or plaintext)
+  # Default: macula (displayed on boot screen if not changed)
+  # password: macula
 
   # k3s cluster configuration
   # Join an existing cluster:

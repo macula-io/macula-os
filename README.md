@@ -40,11 +40,11 @@ All artifacts are output to `./dist/artifacts`.
 
 ## Configuration
 
-MaculaOS uses the same configuration format as k3OS. Configuration is stored at:
+MaculaOS uses a YAML configuration format. Configuration is stored at:
 
 ```
-/k3os/system/config.yaml      # System config (read-only)
-/var/lib/rancher/k3os/config.yaml  # Runtime config
+/macula/system/config.yaml     # System config (read-only)
+/var/lib/macula/config.yaml    # Runtime config
 ```
 
 ### Sample config.yaml
@@ -55,7 +55,7 @@ ssh_authorized_keys:
 
 hostname: my-macula-node
 
-k3os:
+macula:
   dns_nameservers:
     - 1.1.1.1
     - 8.8.8.8
