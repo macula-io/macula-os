@@ -75,7 +75,7 @@ func ReadConfig() (CloudConfig, error) {
 
 func readersToObject(readers ...reader) (CloudConfig, error) {
 	result := CloudConfig{
-		Macula: Macula{
+		Maculaos: Maculaos{
 			Install: &Install{},
 		},
 	}
