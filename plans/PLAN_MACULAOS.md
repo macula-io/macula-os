@@ -1,7 +1,8 @@
 # MaculaOS - Custom Linux Distribution Plan
 
-**Status:** In Progress (Phase 3 - First-Boot Wizard Complete)
+**Status:** In Progress (Phase 3 Complete + Consistent Naming)
 **Created:** 2026-01-07
+**Last Updated:** 2026-01-07
 **Repository:** `macula-io/macula-os`
 **Based on:** k3OS (rancher/k3os fork)
 
@@ -36,7 +37,7 @@ MaculaOS is a custom lightweight Linux distribution optimized for running Macula
 
 1. **Purpose-built**: Designed specifically for k3s from the start
 2. **Lightweight**: ~300MB ISO vs 2GB+ for Ubuntu
-3. **Declarative**: YAML-based config (`/k3os/system/config.yaml`)
+3. **Declarative**: YAML-based config (`/maculaos/system/config.yaml`)
 4. **Immutable rootfs**: Squashfs root, overlay for persistence
 5. **Upgrade system**: A/B partition scheme for safe upgrades
 6. **Boot modes**: Install, live, recovery built-in
@@ -72,7 +73,7 @@ On top of k3OS base, we add:
 │  │                      k3OS Bootstrap                              │   │
 │  │  - Mount squashfs rootfs                                        │   │
 │  │  - Detect boot mode (install/live/disk)                         │   │
-│  │  - Parse cloud-config (/k3os/system/config.yaml)                │   │
+│  │  - Parse cloud-config (/maculaos/system/config.yaml)             │   │
 │  │  - Configure network, hostname, SSH                             │   │
 │  └─────────────────────────────────────────────────────────────────┘   │
 │                                                   │                     │
@@ -170,8 +171,8 @@ images/
 ```
 overlay/
 ├── etc/
-│   ├── k3os/
-│   │   └── config.yaml.tmpl     # Template with Macula defaults
+│   ├── macula/
+│   │   └── config.yaml.example  # Template with Macula defaults
 │   ├── init.d/
 │   │   ├── macula-mdns          # NEW: mDNS service
 │   │   └── macula-firstboot     # NEW: First-boot wizard trigger
@@ -192,9 +193,9 @@ overlay/
 ### 4.3 Default Configuration
 
 ```yaml
-# /k3os/system/config.yaml (MaculaOS defaults)
+# /var/lib/maculaos/config.yaml (MaculaOS defaults)
 
-k3os:
+maculaos:
   # Hostname template - will be macula-XXXX where XXXX is from MAC
   hostname: macula-${RANDOM_SUFFIX}
 
@@ -287,7 +288,7 @@ A lightweight web UI that runs on first boot (before Console is ready).
 ```
 First Boot Flow:
 1. User boots MaculaOS
-2. Checks /var/lib/macula/.configured flag
+2. Checks /var/lib/maculaos/.configured flag
 3. If not configured:
    - Start firstboot server on port 80
    - Generate pairing code
@@ -393,16 +394,21 @@ with arm64 naming but the binaries are still amd64 (base images pull host arch).
 
 **Minor issues remaining:**
 - Welcome message still says "k3OS" in some places (cosmetic)
-- packer templates have k3os references (not critical for boot)
+- Some internal comments may still reference k3os (cosmetic, non-functional)
 
 **Rebranding completed (2026-01-07):**
 - Go module: `github.com/rancher/k3os` → `github.com/macula-io/macula-os`
 - CLI app: `k3os` → `maculaos`
 - System paths: `/k3os/system` → `/macula/system`, `/run/k3os` → `/run/macula`
-- Environment vars: `K3OS_*` → `MACULA_*` / `MACULAOS_*`
+- Config paths: `/var/lib/rancher/k3os` → `/var/lib/maculaos`
+- Environment vars: `K3OS_*` → `MACULAOS_*`
 - Docker images: `k3os-*` → `macula-*`
-- Partition labels: `K3OS_STATE` → `MACULA_STATE`
+- Partition labels: `K3OS_STATE` → `MACULAOS_STATE`
+- ISO volume label: `K3OS` → `MACULAOS`
+- YAML config key: `k3os:` → `maculaos:`
+- Go struct: `Macula` → `Maculaos`
 - Boot params: `k3os.mode` → `macula.mode`
+- Login user: `rancher` → `macula` (unchanged - short for typing)
 
 **Build artifacts (amd64) - 2026-01-07:**
 - `maculaos-amd64.iso` - 1.5GB bootable ISO
@@ -450,6 +456,7 @@ with arm64 naming but the binaries are still amd64 (base images pull host arch).
 - `overlay/var/lib/rancher/k3s/agent/images/README.md`
 - `scripts/download-airgap-images.sh`
 - `scripts/rebrand-config-struct.sh`
+- `scripts/rebrand-macula-to-maculaos.sh` - Helper for consistent naming updates
 
 ### Phase 3: First-Boot Wizard (Week 3-4)
 
@@ -472,7 +479,7 @@ with arm64 naming but the binaries are still amd64 (base images pull host arch).
   - POST to /api/console/pair
   - Returns refresh token, user name, org identity
 - [x] Store credentials securely (2026-01-07)
-  - Stored in /var/lib/macula/credentials/portal.json
+  - Stored in /var/lib/maculaos/credentials/portal.json
   - Directory permissions 0700, file permissions 0600
 - [ ] Configure Console on success (requires Console integration)
 - [x] Create init script for firstboot (2026-01-07)
@@ -489,6 +496,41 @@ with arm64 naming but the binaries are still amd64 (base images pull host arch).
 **Build system updated:**
 - `images/20-progs/Dockerfile` - Added firstboot build stage
 - `images/20-rootfs/Dockerfile` - Copy firstboot binary to /sbin/
+
+**Consistent Naming Convention (2026-01-07):**
+
+The naming convention was standardized to use `maculaos` (not `macula`) for all system identifiers
+to provide clear distinction from the login user (`macula`) and business-level naming:
+
+| Category | k3OS Original | Final MaculaOS |
+|----------|---------------|----------------|
+| Partition label | `K3OS_STATE` | `MACULAOS_STATE` |
+| ISO volume label | `K3OS` | `MACULAOS` |
+| Config directory | `/var/lib/rancher/k3os/` | `/var/lib/maculaos/` |
+| YAML config key | `k3os:` | `maculaos:` |
+| Go struct | `K3OS` | `Maculaos` |
+| Login user | `rancher` | `macula` |
+
+Files updated for consistent naming:
+- `install.sh` - MACULAOS_STATE partition labels
+- `overlay/libexec/macula/boot` - MACULAOS_STATE, /var/lib/maculaos paths
+- `overlay/libexec/macula/mode` - MACULAOS_STATE labels
+- `overlay/libexec/macula/mode-disk` - MACULAOS_STATE labels
+- `overlay/libexec/macula/live` - MACULAOS ISO label
+- `overlay/libexec/macula/mode-local` - /var/lib/maculaos paths
+- `overlay/etc/init.d/macula-firstboot` - /var/lib/maculaos paths
+- `overlay/etc/macula/config.yaml.example` - maculaos: config key
+- `images/70-iso/Dockerfile` - MACULAOS volume id
+- `images/70-iso/grub.cfg` - MACULAOS fs_label
+- `cmd/macula-firstboot/main.go` - /var/lib/maculaos paths
+- `pkg/config/config.go` - Maculaos struct, maculaos json tag
+- `pkg/config/read.go` - Maculaos struct initialization
+- `pkg/system/system.go` - DefaultLocalDir = /var/lib/maculaos
+- All packer config files - maculaos: config key
+
+Commits:
+- `152f09c` - refactor: consistent maculaos naming convention
+- `13a174d` - fix: update Macula → Maculaos in read.go
 
 ### Phase 4: Multi-Arch Builds & Testing (Week 4-5)
 
