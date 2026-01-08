@@ -100,4 +100,4 @@ RUN ln -s k3s /usr/src/image/sbin/ctr
 COPY install.sh /usr/src/image/libexec/macula/install
 RUN sed -i -e "s/%VERSION%/${VERSION}/g" -e "s/%ARCH%/${ARCH}/g" /usr/src/image/lib/os-release
 RUN mkdir -p /output && \
-    mksquashfs /usr/src/image /output/rootfs.squashfs
+    mksquashfs /usr/src/image /output/rootfs.squashfs -comp zstd -Xcompression-level 19

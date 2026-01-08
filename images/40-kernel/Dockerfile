@@ -17,7 +17,7 @@ RUN mkdir -p /usr/src/initrd/lib && \
 RUN mkdir -p /output && \
     cd /usr/src/kernel && \
     depmod -b . $(cat /usr/src/kernel/version) && \
-    mksquashfs . /output/kernel.squashfs
+    mksquashfs . /output/kernel.squashfs -comp zstd -Xcompression-level 19
 
 RUN cp /usr/src/kernel/version /output/ && \
     cp /usr/src/kernel/vmlinuz /output/
@@ -48,4 +48,4 @@ RUN cd /usr/src/initrd && \
     ln -s /macula/system/macula/current/maculaos init
 
 RUN cd /usr/src/initrd && \
-    find . | cpio -H newc -o | gzip -c -1 > /output/initrd
+    find . | cpio -H newc -o | gzip -9 > /output/initrd
