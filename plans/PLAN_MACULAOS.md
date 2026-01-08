@@ -2156,19 +2156,320 @@ maculaos:
 
 ---
 
-## 7. Output Artifacts
+## 7. Dual ISO Strategy (Netboot + Airgapped)
 
-### 7.1 Image Formats
+MaculaOS provides two ISO variants to optimize for different deployment scenarios:
 
-| Format | Use Case | Size (est.) |
-|--------|----------|-------------|
-| ISO | USB boot, VM install | ~400MB |
-| IMG | Direct SD card write (RPi) | ~400MB |
-| OVA | VirtualBox/VMware import | ~500MB |
-| QCOW2 | KVM/Proxmox/libvirt | ~400MB |
-| TAR | Container/chroot base | ~300MB |
+### 7.1 ISO Types Overview
 
-### 7.2 File Naming
+| ISO Type | Size | Internet Required | Use Case |
+|----------|------|-------------------|----------|
+| **Netboot** | ~200-300MB | Yes (at install) | Quick eval, cloud VMs, fast downloads |
+| **Airgapped** | ~800MB-1GB | No | Offline installs, air-gapped environments |
+
+### 7.2 Netboot ISO Architecture
+
+The Netboot ISO contains only what's needed to boot and download the rest:
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                         NETBOOT ISO CONTENTS                            │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│  Boot Loader (syslinux/grub)           ~2MB                            │
+│  ├── grub.cfg / syslinux.cfg                                           │
+│  └── EFI files                                                          │
+│                                                                         │
+│  Linux Kernel (vmlinuz)                ~11MB                           │
+│  └── Compressed kernel image                                            │
+│                                                                         │
+│  Minimal Initrd                        ~50-100MB                       │
+│  ├── BusyBox (core utilities)                                          │
+│  ├── Network drivers (common NICs)                                     │
+│  ├── curl/wget (HTTP client)                                           │
+│  ├── Installer script                                                   │
+│  └── Progress UI (dialog/whiptail)                                     │
+│                                                                         │
+│  Metadata                              ~1KB                            │
+│  ├── version.txt                                                        │
+│  └── checksums.txt (for downloads)                                     │
+│                                                                         │
+│  Total: ~200-300MB                                                     │
+│                                                                         │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+**What's NOT in Netboot ISO:**
+- rootfs.squashfs (~400MB) - downloaded during install
+- kernel.squashfs (~200MB) - downloaded during install
+- Airgap container images (~200MB) - downloaded as needed
+
+### 7.3 Netboot Boot Flow
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                         NETBOOT INSTALL FLOW                            │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│  1. Boot from USB/ISO                                                   │
+│     └── Load kernel + minimal initrd into RAM                          │
+│                                                                         │
+│  2. Network Setup                                                       │
+│     ├── Detect network interfaces                                       │
+│     ├── DHCP or manual IP configuration                                │
+│     └── Test internet connectivity                                      │
+│                                                                         │
+│  3. Download Components                                                 │
+│     │                                                                   │
+│     │  ┌─────────────────────────────────────────────────────────┐     │
+│     │  │  Downloading MaculaOS v1.0.0...                         │     │
+│     │  │                                                         │     │
+│     │  │  [████████████████████░░░░░░░░░░░░] 65%                 │     │
+│     │  │                                                         │     │
+│     │  │  rootfs.squashfs    [████████████████████] 100%        │     │
+│     │  │  kernel.squashfs    [██████████░░░░░░░░░░]  50%        │     │
+│     │  │                                                         │     │
+│     │  │  Source: github.com/macula-io/macula-os/releases       │     │
+│     │  └─────────────────────────────────────────────────────────┘     │
+│     │                                                                   │
+│     ├── Download rootfs.squashfs from GitHub Releases                  │
+│     ├── Download kernel.squashfs from GitHub Releases                  │
+│     ├── Verify SHA256 checksums                                        │
+│     └── Verify GPG signature (optional)                                │
+│                                                                         │
+│  4. Installation                                                        │
+│     ├── Select target disk                                              │
+│     ├── Create partitions (boot, rootfs-A, rootfs-B, data)             │
+│     ├── Write squashfs files to rootfs-A                               │
+│     └── Install bootloader                                              │
+│                                                                         │
+│  5. First Boot Setup                                                    │
+│     └── Same as airgapped (pairing, config, etc.)                      │
+│                                                                         │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+### 7.4 Airgapped ISO Architecture
+
+The Airgapped ISO contains everything needed for offline installation:
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                        AIRGAPPED ISO CONTENTS                           │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│  Boot Loader                           ~2MB                            │
+│  Linux Kernel                          ~11MB                           │
+│  Full Initrd                           ~150MB                          │
+│                                                                         │
+│  rootfs.squashfs                       ~400MB                          │
+│  ├── Alpine base system                                                │
+│  ├── k3s binary                                                        │
+│  ├── Macula components                                                 │
+│  ├── NATS server                                                       │
+│  └── All tools (vim, btop, git, etc.)                                 │
+│                                                                         │
+│  kernel.squashfs                       ~200MB                          │
+│  ├── Linux kernel modules                                              │
+│  └── Firmware blobs                                                    │
+│                                                                         │
+│  Airgap Images (optional)              ~200MB                          │
+│  ├── macula-console:latest                                             │
+│  ├── pause:3.6                                                         │
+│  └── coredns:1.10.1                                                    │
+│                                                                         │
+│  Total: ~800MB-1GB                                                     │
+│                                                                         │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+### 7.5 Download Sources
+
+| Component | Primary Source | Fallback |
+|-----------|----------------|----------|
+| rootfs.squashfs | GitHub Releases | Self-hosted CDN |
+| kernel.squashfs | GitHub Releases | Self-hosted CDN |
+| Checksums | GitHub Releases | Embedded in ISO |
+| GPG signature | GitHub Releases | None |
+
+**GitHub Release URLs:**
+```
+https://github.com/macula-io/macula-os/releases/download/v{VERSION}/
+├── maculaos-{VERSION}-{ARCH}.iso           # Airgapped
+├── maculaos-{VERSION}-{ARCH}-netboot.iso   # Netboot
+├── maculaos-rootfs-{ARCH}.squashfs         # For netboot download
+├── maculaos-kernel-{ARCH}.squashfs         # For netboot download
+├── SHA256SUMS.txt
+└── SHA256SUMS.txt.asc                      # GPG signature
+```
+
+### 7.6 Build System Changes
+
+New Makefile targets:
+
+```makefile
+# Build netboot ISO (minimal, downloads rest)
+netboot:
+	ARCH=$(ARCH) ISO_TYPE=netboot make iso
+
+# Build airgapped ISO (full, self-contained)
+airgapped:
+	ARCH=$(ARCH) ISO_TYPE=airgapped make iso
+
+# Build both
+all-isos: netboot airgapped
+```
+
+New Docker build stage:
+
+```
+images/
+├── ... (existing stages)
+├── 70-iso/                  # Existing - becomes airgapped
+├── 71-netboot-iso/          # NEW - netboot variant
+│   ├── Dockerfile
+│   └── grub.cfg             # Netboot-specific boot config
+```
+
+### 7.7 Netboot Initrd Contents
+
+The netboot initrd is smaller but must include networking:
+
+```dockerfile
+# images/71-netboot-iso/Dockerfile
+FROM alpine:3.20 AS netboot-initrd
+
+# Core utilities
+RUN apk add --no-cache \
+    busybox-static \
+    curl \
+    dialog \
+    e2fsprogs \
+    parted \
+    dosfstools
+
+# Network drivers (common hardware)
+RUN apk add --no-cache \
+    linux-firmware-none \
+    linux-firmware-intel \
+    linux-firmware-realtek \
+    linux-firmware-broadcom
+
+# Installer script
+COPY scripts/netboot-install.sh /init
+```
+
+### 7.8 Installer Script (netboot-install.sh)
+
+```bash
+#!/bin/sh
+# MaculaOS Netboot Installer
+
+RELEASE_URL="https://github.com/macula-io/macula-os/releases/download"
+VERSION="$(cat /etc/maculaos-version)"
+ARCH="$(uname -m)"
+
+# 1. Configure network
+setup_network() {
+    # Try DHCP first
+    udhcpc -i eth0 || udhcpc -i eno1 || manual_network
+}
+
+# 2. Download components
+download_components() {
+    cd /tmp
+    curl -L -o rootfs.squashfs \
+        "${RELEASE_URL}/v${VERSION}/maculaos-rootfs-${ARCH}.squashfs"
+    curl -L -o kernel.squashfs \
+        "${RELEASE_URL}/v${VERSION}/maculaos-kernel-${ARCH}.squashfs"
+
+    # Verify checksums
+    curl -L -o SHA256SUMS.txt "${RELEASE_URL}/v${VERSION}/SHA256SUMS.txt"
+    sha256sum -c SHA256SUMS.txt || exit 1
+}
+
+# 3. Install to disk
+install_to_disk() {
+    # ... partition and install ...
+}
+```
+
+### 7.9 Configuration
+
+```yaml
+# /var/lib/maculaos/config.yaml
+maculaos:
+  install:
+    # Netboot settings
+    netboot:
+      source: github              # github, self-hosted, local
+      url: "https://github.com/macula-io/macula-os/releases"
+      verify_signature: true      # Require GPG signature
+
+    # Self-hosted option for enterprise
+    self_hosted:
+      url: "https://updates.corp.example.com/maculaos"
+      ca_cert: "/etc/ssl/corp-ca.pem"
+```
+
+### 7.10 CI/CD Updates
+
+```yaml
+# .github/workflows/build.yml additions
+
+jobs:
+  build-netboot-amd64:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Build Netboot ISO
+        run: ARCH=amd64 ISO_TYPE=netboot make iso
+
+  build-airgapped-amd64:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Build Airgapped ISO
+        run: ARCH=amd64 ISO_TYPE=airgapped make iso
+
+  release:
+    needs: [build-netboot-amd64, build-airgapped-amd64, ...]
+    steps:
+      - name: Upload Release Artifacts
+        run: |
+          gh release upload v$VERSION \
+            maculaos-$VERSION-amd64.iso \
+            maculaos-$VERSION-amd64-netboot.iso \
+            maculaos-rootfs-amd64.squashfs \
+            maculaos-kernel-amd64.squashfs \
+            SHA256SUMS.txt
+```
+
+### 7.11 Implementation Tasks
+
+- [ ] Create `images/71-netboot-iso/Dockerfile`
+- [ ] Create `scripts/netboot-install.sh` installer script
+- [ ] Add netboot/airgapped targets to Makefile
+- [ ] Update CI/CD to build both ISO types
+- [ ] Create download progress UI (dialog-based)
+- [ ] Add GPG signing to release workflow
+- [ ] Test netboot flow end-to-end
+- [ ] Document netboot requirements (network, DHCP)
+
+---
+
+## 8. Output Artifacts
+
+### 8.1 Image Formats
+
+| Format | Variant | Use Case | Size (est.) |
+|--------|---------|----------|-------------|
+| ISO | Netboot | USB boot with internet | ~200-300MB |
+| ISO | Airgapped | USB boot, offline install | ~800MB-1GB |
+| IMG | Airgapped | Direct SD card write (RPi) | ~800MB |
+| OVA | Airgapped | VirtualBox/VMware import | ~900MB |
+| QCOW2 | Airgapped | KVM/Proxmox/libvirt | ~800MB |
+| TAR | - | Container/chroot base | ~400MB |
+
+### 8.2 File Naming
 
 ```
 macula-os-{version}-{arch}.{format}
