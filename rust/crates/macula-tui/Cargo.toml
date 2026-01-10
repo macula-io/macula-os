@@ -1,0 +1,45 @@
+[package]
+name = "macula-tui"
+description = "TUI management console for MaculaOS"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+[[bin]]
+name = "macula-tui"
+path = "src/main.rs"
+
+[dependencies]
+macula-tui-common = { path = "../macula-tui-common" }
+
+# TUI
+ratatui.workspace = true
+crossterm.workspace = true
+
+# Async runtime
+tokio = { workspace = true, features = ["rt-multi-thread", "macros", "sync", "time"] }
+
+# NATS client
+async-nats.workspace = true
+futures = "0.3"
+
+# Serialization
+serde.workspace = true
+serde_json.workspace = true
+serde_yaml.workspace = true
+
+# CLI
+clap.workspace = true
+
+# Error handling
+anyhow.workspace = true
+thiserror.workspace = true
+
+# Logging
+tracing.workspace = true
+tracing-subscriber.workspace = true
+
+# Terminal colors
+colored.workspace = true

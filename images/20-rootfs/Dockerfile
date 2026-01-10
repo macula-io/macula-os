@@ -88,6 +88,8 @@ COPY --from=progs /output/metadata /usr/src/image/sbin/metadata
 COPY --from=progs /output/macula-firstboot /usr/src/image/sbin/macula-firstboot
 COPY --from=progs /output/kubectx/kubectx /output/kubectx/kubens /usr/src/image/bin/
 COPY --from=progs /output/nats-server /usr/src/image/bin/nats-server
+COPY --from=progs /output/macula-wizard /usr/src/image/sbin/macula-wizard
+COPY --from=progs /output/macula-tui /usr/src/image/sbin/macula-tui
 
 COPY overlay/ /usr/src/image/
 

@@ -42,11 +42,41 @@ RUN NATS_VERSION="2.10.24" && \
     mv /tmp/nats-server-v${NATS_VERSION}-linux-${NATS_ARCH}/nats-server /output/nats-server && \
     chmod +x /output/nats-server
 
+# Rust build stage for TUI and Wizard
+FROM rust:1.83-alpine as rustbuild
+ARG ARCH
+# Install build dependencies for musl static linking
+RUN apk add --no-cache musl-dev pkgconf openssl-dev openssl-libs-static
+
+# Set target based on architecture
+ENV CARGO_TARGET_DIR=/tmp/target
+RUN if [ "$ARCH" = "amd64" ]; then \
+        rustup target add x86_64-unknown-linux-musl; \
+        echo "x86_64-unknown-linux-musl" > /tmp/rust-target; \
+    else \
+        rustup target add aarch64-unknown-linux-musl; \
+        echo "aarch64-unknown-linux-musl" > /tmp/rust-target; \
+    fi
+
+# Copy Rust workspace
+COPY /rust/ /workspace/
+WORKDIR /workspace
+
+# Build statically linked binaries
+RUN TARGET=$(cat /tmp/rust-target) && \
+    RUSTFLAGS="-C target-feature=+crt-static" cargo build --release --target $TARGET && \
+    mkdir -p /output && \
+    cp /tmp/target/$TARGET/release/macula-wizard /output/ && \
+    cp /tmp/target/$TARGET/release/macula-tui /output/ && \
+    strip /output/macula-wizard /output/macula-tui
+
 FROM gobuild
 COPY --from=linuxkit /output/ /output/
 COPY --from=macula /output/ /output/
 COPY --from=firstboot /output/ /output/
 COPY --from=nats /output/nats-server /output/nats-server
+COPY --from=rustbuild /output/macula-wizard /output/macula-wizard
+COPY --from=rustbuild /output/macula-tui /output/macula-tui
 WORKDIR /output
 RUN git clone --branch v0.7.0 https://github.com/ahmetb/kubectx.git \
  && chmod -v +x kubectx/kubectx kubectx/kubens

@@ -1,0 +1,49 @@
+[package]
+name = "macula-wizard"
+description = "First-boot setup wizard for MaculaOS"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+[[bin]]
+name = "macula-wizard"
+path = "src/main.rs"
+
+[dependencies]
+macula-tui-common = { path = "../macula-tui-common" }
+
+# TUI
+ratatui.workspace = true
+crossterm.workspace = true
+
+# Async runtime
+tokio = { workspace = true, features = ["rt-multi-thread", "macros", "fs", "process"] }
+
+# Serialization
+serde.workspace = true
+serde_json.workspace = true
+serde_yaml.workspace = true
+
+# CLI
+clap.workspace = true
+
+# HTTP client (for Portal pairing)
+reqwest.workspace = true
+
+# Error handling
+anyhow.workspace = true
+thiserror.workspace = true
+
+# Logging
+tracing.workspace = true
+tracing-subscriber.workspace = true
+
+# Crypto
+ed25519-dalek.workspace = true
+rand.workspace = true
+base64.workspace = true
+
+# Paths
+directories.workspace = true
