@@ -43,7 +43,7 @@ RUN NATS_VERSION="2.10.24" && \
     chmod +x /output/nats-server
 
 # Rust build stage for TUI and Wizard
-FROM rust:1.83-alpine as rustbuild
+FROM rust:1.85-alpine as rustbuild
 ARG ARCH
 # Install build dependencies for musl static linking
 RUN apk add --no-cache musl-dev pkgconf openssl-dev openssl-libs-static
