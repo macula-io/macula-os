@@ -1,6 +1,5 @@
 #!/bin/sh
 # Generate /etc/issue with colorful MaculaOS banner
-# Font: standard
 
 . /etc/os-release
 
@@ -13,14 +12,14 @@ RESET="${ESC}[0m"
 
 cat > /etc/issue << BANNER
 
-${CYAN}    .o---o.${RESET}
-${CYAN}   /|     |\\${RESET}       ${ORANGE} __  __    _    ____ _   _ _        _        ___  ____  ${RESET}
-${CYAN}  o-+-----+-o${RESET}     ${ORANGE}|  \/  |  / \  / ___| | | | |      / \      / _ \/ ___| ${RESET}
-${CYAN}   \\|     |/${RESET}      ${ORANGE}| |\/| | / _ \| |   | | | | |     / _ \    | | | \___ \ ${RESET}
-${CYAN}    'o---o'${RESET}       ${ORANGE}| |  | |/ ___ \ |___| |_| | |___ / ___ \   | |_| |___) |${RESET}
-${CYAN}      \\ /${RESET}         ${ORANGE}|_|  |_/_/   \_\____|\___/|_____/_/   \_\   \___/|____/ ${RESET}
-${CYAN}       o${RESET}
-                  ${WHITE}Decentralized Edge Computing Platform${RESET}
+${CYAN}    o-------o${RESET}
+${CYAN}   /|       |\\${RESET}        ${ORANGE} __  __    _    ____ _   _ _        _        ___  ____ ${RESET}
+${CYAN}  o-+--o----+-o${RESET}     ${ORANGE}|  \\/  |  / \\  / ___| | | | |      / \\      / _ \\/ ___| ${RESET}
+${CYAN}   \\|\\ | /| /${RESET}       ${ORANGE}| |\\/| | / _ \\| |   | | | | |     / _ \\    | | | \\___ \\ ${RESET}
+${CYAN}    o--O--o${RESET}         ${ORANGE}| |  | |/ ___ \\ |___| |_| | |___ / ___ \\   | |_| |___) |${RESET}
+${CYAN}   /|  |  |\\${RESET}        ${ORANGE}|_|  |_/_/   \\_\\____|\\___/|_____/_/   \\_\\   \\___/|____/ ${RESET}
+${CYAN}  o----o----o${RESET}
+                    ${WHITE}Decentralized Edge Computing Platform${RESET}
 
 ${GRAY}  $PRETTY_NAME - Kernel \r on \m (\l)${RESET}
 
