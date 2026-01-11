@@ -2,7 +2,7 @@
 
 **Status:** In Progress (v1.0 Complete, v1.1 Mostly Complete)
 **Created:** 2026-01-07
-**Last Updated:** 2026-01-07 (v1.1: Mesh roles, health checks, backup, GitOps, P2P registry)
+**Last Updated:** 2026-01-11 (ISO boot fixes: grub.cfg dynamic kernel discovery, path consolidation)
 **Repository:** `macula-io/macula-os`
 **Based on:** k3OS (rancher/k3os fork)
 
@@ -1888,6 +1888,23 @@ with arm64 naming but the binaries are still amd64 (base images pull host arch).
   - `/lib/ld-musl-x86_64.so.1` (dynamic linker)
 - Modified Go code to try multiple paths for modprobe (`/sbin/modprobe`, `/bin/modprobe`, `modprobe`)
 - Committed in `58cf948` - "fix: add kmod and libraries to initrd for loop device support"
+
+**ISO Boot Fixes (2026-01-11):**
+- Fixed grub.cfg to use dynamic kernel discovery for ISO9660 compatibility:
+  - ISO9660 symlinks appear as 0-byte files, breaking "current" symlink
+  - Added `find_kernel` function that iterates directories to find kernel.squashfs
+  - Committed in `4238c50` - "fix(grub): use dynamic kernel discovery for ISO9660 compatibility"
+- Consolidated paths for boot consistency:
+  - Changed `/maculaos/system/` → `/macula/system/` to match init scripts
+  - Init scripts expect `MACULA_SYSTEM=/.base/macula/system`
+  - Files updated: images/60-package/Dockerfile, images/70-iso/grub.cfg, package/Dockerfile, scripts/package
+  - Committed in `423fd33` - "fix(build): consolidate /macula/system/ paths for boot consistency"
+- Boot now succeeds with `macula.mode=live` - reaches login prompt
+
+**QEMU Testing (2026-01-11):**
+- run-qemu script bypasses GRUB, loads kernel/initrd directly
+- Requires `macula.mode=live` as argument: `./scripts/run-qemu macula.mode=live`
+- ISO boots to login prompt with all services running (k3s, sshd, first-boot wizard)
 
 **Additional rebranding (2026-01-07):**
 - Fixed Go code: main.go, pkg/cc/funcs.go, pkg/cli/rc/rc.go, pkg/config/read_cc.go
