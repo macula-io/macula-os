@@ -4,7 +4,7 @@
         "type": "file",
         "source": "/etc/macula/logo.txt",
         "color": {
-            "1": "yellow"
+            "1": "cyan"
         },
         "padding": {
             "top": 1,
@@ -15,7 +15,7 @@
     "display": {
         "separator": " -> ",
         "color": {
-            "keys": "yellow",
+            "keys": "cyan",
             "output": "white"
         }
     },
