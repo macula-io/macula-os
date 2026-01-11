@@ -37,11 +37,18 @@ for part in ${USB_DEVICE}*; do
 done
 
 # Write ISO
+ISO_SIZE=$(du -h "$ISO_PATH" | cut -f1)
 echo "Writing ISO to $USB_DEVICE..."
-echo "ISO: $ISO_PATH ($(du -h "$ISO_PATH" | cut -f1))"
+echo "ISO: $ISO_PATH ($ISO_SIZE)"
 echo "This may take a few minutes..."
 
-sudo dd if="$ISO_PATH" of="$USB_DEVICE" bs=4M status=progress conv=fsync
+# Use pv for progress if available, otherwise dd with progress
+if command -v pv &>/dev/null; then
+    sudo sh -c "pv '$ISO_PATH' | dd of='$USB_DEVICE' bs=4M conv=fsync 2>/dev/null"
+else
+    echo "(Install 'pv' for better progress display)"
+    sudo dd if="$ISO_PATH" of="$USB_DEVICE" bs=4M status=progress oflag=direct conv=fsync
+fi
 
 echo ""
 echo "=== Complete ==="
