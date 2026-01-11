@@ -1,11 +1,11 @@
-Welcome to MaculaOS!
 
-MaculaOS is a lightweight Linux distribution optimized for Macula edge nodes.
-Pre-installed with k3s and Macula Console for zero-touch deployment.
+ Welcome to MaculaOS!
 
-Documentation: https://github.com/macula-io/macula-os
-Issues: https://github.com/macula-io/macula-os/issues
+ Lightweight Linux for Macula edge nodes.
+ Pre-installed with k3s for zero-touch deployment.
 
-To pair with Macula Portal, visit http://macula.local in your browser
-or scan the QR code displayed during first boot.
+ Docs:   https://github.com/macula-io/macula-os
+ Issues: https://github.com/macula-io/macula-os/issues
+
+ To pair with Macula Portal, visit http://macula.local
 

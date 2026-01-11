@@ -20,6 +20,11 @@ COPY grub.cfg /usr/src/iso/boot/grub/grub.cfg
 
 COPY --from=package /output/ /usr/src/iso/
 
+# Replace KERNEL_VERSION placeholder with actual kernel version
+RUN KVER=$(ls /usr/src/iso/macula/system/kernel/ | head -1) && \
+    sed -i "s/KERNEL_VERSION/$KVER/g" /usr/src/iso/boot/grub/grub.cfg && \
+    echo "Kernel version: $KVER"
+
 COPY config.yaml /usr/src/iso/macula/system/
 RUN mkdir -p /output && \
     grub-mkrescue -o /output/maculaos.iso /usr/src/iso/. -- -volid MACULAOS -joliet on && \

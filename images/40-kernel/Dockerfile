@@ -17,7 +17,7 @@ RUN mkdir -p /usr/src/initrd/lib && \
 RUN mkdir -p /output && \
     cd /usr/src/kernel && \
     depmod -b . $(cat /usr/src/kernel/version) && \
-    mksquashfs . /output/kernel.squashfs -comp zstd -Xcompression-level 19
+    mksquashfs . /output/kernel.squashfs -comp gzip
 
 RUN cp /usr/src/kernel/version /output/ && \
     cp /usr/src/kernel/vmlinuz /output/
