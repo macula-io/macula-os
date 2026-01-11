@@ -16,7 +16,8 @@ popd
 
 mkdir -p ./build
 ID=$(docker create ${REPO}/macula-package:${TAG})
-docker cp ${ID}:/output/maculaos ./build/
+docker cp ${ID}:/output/macula ./build/
+docker cp ${ID}:/output/sbin ./build/
 docker rm -fv $ID
 
 docker build \
