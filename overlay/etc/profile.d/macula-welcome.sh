@@ -17,9 +17,9 @@ if command -v fastfetch >/dev/null 2>&1; then
 else
     printf '\n'
     printf '%s    o-------o%s\n' "$C" "$R"
-    printf '%s   /|       |\\%s       %s+========================+%s\n' "$C" "$R" "$O" "$R"
+    printf '%s   /|       |\\%s      %s+========================+%s\n' "$C" "$R" "$O" "$R"
     printf '%s  o-+--o----+-o%s     %s||%s%s      Macula OS       %s%s||%s\n' "$C" "$R" "$O" "$R" "$W" "$R" "$O" "$R"
-    printf '%s   \\|\\ | /| /%s       %s+========================+%s\n' "$C" "$R" "$O" "$R"
+    printf '%s   \\|\\ | /| /%s      %s+========================+%s\n' "$C" "$R" "$O" "$R"
     printf '%s    o--O--o%s\n' "$C" "$R"
     printf '%s   /|  |  |\\%s        %sDecentralized Edge Computing Platform%s\n' "$C" "$R" "$W" "$R"
     printf '%s  o----o----o%s\n' "$C" "$R"
