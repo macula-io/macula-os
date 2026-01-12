@@ -2,9 +2,10 @@
 
 use anyhow::Result;
 use crossterm::{
+    cursor::MoveTo,
     event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyEventKind},
     execute,
-    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+    terminal::{disable_raw_mode, enable_raw_mode, Clear, ClearType, EnterAlternateScreen, LeaveAlternateScreen},
 };
 use macula_tui_common::{widgets::Logo, Theme};
 use ratatui::{
@@ -463,6 +464,8 @@ pub async fn run(config_dir: &str, portal_url: &str) -> Result<()> {
     // Setup terminal
     enable_raw_mode()?;
     let mut stdout = io::stdout();
+    // Clear screen first (for Linux TTY where alternate screen may not work)
+    execute!(stdout, Clear(ClearType::All), MoveTo(0, 0))?;
     execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
