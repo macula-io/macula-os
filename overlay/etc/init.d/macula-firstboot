@@ -1,16 +1,9 @@
 #!/sbin/openrc-run
-# MaculaOS First-Boot Wizard Service
-# Runs on first boot to pair the node with Macula Portal
+# MaculaOS First-Boot Setup Service
+# Just prints a message - actual wizard runs after login via profile script
 
 name="macula-firstboot"
-description="MaculaOS First-Boot Wizard"
-
-command="/sbin/macula-firstboot"
-command_args=""
-command_background="yes"
-pidfile="/run/${RC_SVCNAME}.pid"
-output_log="/var/log/macula-firstboot.log"
-error_log="/var/log/macula-firstboot.log"
+description="MaculaOS First-Boot Setup"
 
 CONFIGURED_FLAG="/var/lib/maculaos/.configured"
 
@@ -20,37 +13,24 @@ depend() {
     before sshd
 }
 
-start_pre() {
-    # Check if already configured
-    if [ -f "${CONFIGURED_FLAG}" ]; then
-        einfo "System already configured, skipping firstboot wizard"
-        return 1
-    fi
-
-    # Ensure log directory exists
-    checkpath --directory --owner root:root --mode 0755 /var/log
-
+start() {
     # Ensure macula directory exists
     checkpath --directory --owner root:root --mode 0755 /var/lib/maculaos
 
-    einfo "Starting first-boot wizard..."
-    einfo "Visit http://$(hostname).local to complete setup"
-}
+    # Check if already configured
+    if [ -f "${CONFIGURED_FLAG}" ]; then
+        einfo "System already configured"
+        return 0
+    fi
 
-start() {
-    ebegin "Starting ${name}"
-    start-stop-daemon --start --background \
-        --make-pidfile --pidfile "${pidfile}" \
-        --stdout "${output_log}" \
-        --stderr "${error_log}" \
-        --exec "${command}" -- ${command_args}
-    eend $?
+    einfo "First-boot setup required"
+    einfo "The setup wizard will run after you log in"
+    einfo "Login with: macula / macula"
+    return 0
 }
 
 stop() {
-    ebegin "Stopping ${name}"
-    start-stop-daemon --stop --pidfile "${pidfile}"
-    eend $?
+    return 0
 }
 
 status() {
@@ -58,12 +38,6 @@ status() {
         einfo "System is configured"
         return 0
     fi
-
-    if [ -f "${pidfile}" ] && kill -0 $(cat "${pidfile}") 2>/dev/null; then
-        einfo "${name} is running"
-        return 0
-    fi
-
-    einfo "${name} is not running, system not configured"
-    return 3
+    einfo "System not yet configured - login to run wizard"
+    return 0
 }
