@@ -1,4 +1,21 @@
-## BEAM-Native GitOps Reconciler
+# EXPLORATION: BEAM-Native GitOps Reconciler
+
+> **Status:** ❌ REJECTED (2026-01-27)
+>
+> **Decision:** Use **k3s + FluxCD** instead of BEAM-native GitOps.
+>
+> **Rationale:**
+> - k3s provides battle-tested container orchestration with minimal overhead
+> - FluxCD is mature, well-documented, and has strong community support
+> - The BEAM-native approach would require significant development effort for uncertain gains
+> - k3s + Flux gives us GitOps out of the box with proven reliability
+> - Focus engineering effort on Macula mesh networking and applications, not reinventing deployment infrastructure
+>
+> **This document is preserved for historical reference only.**
+
+---
+
+## Original Exploration
 
 A core component of Pure BEAM MaculaOS: replacing Flux/ArgoCD with native Erlang/Elixir.
 
