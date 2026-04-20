@@ -1,3 +1,9 @@
+> ⚠️ **OUTDATED (2026-04-20)**: References archived repos
+> (macula-console, macula-arcade, macula-marketplace, macula-gitops,
+> macula-fluxcd-deploy). Deployment has moved to
+> `hecate-social/hecate-gitops`. User-facing runtime is
+> **Hecate** (`hecate-social/hecate-*`). Kept for historical reference.
+
 # MaculaOS - Custom Linux Distribution Plan
 
 **Status:** In Progress (v1.0 Complete, v1.1 Mostly Complete)

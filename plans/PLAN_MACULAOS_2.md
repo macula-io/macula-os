@@ -1,3 +1,9 @@
+> ⚠️ **OUTDATED (2026-04-20)**: References archived repos
+> (macula-console, macula-arcade, macula-marketplace, macula-gitops,
+> macula-fluxcd-deploy). Deployment has moved to
+> `hecate-social/hecate-gitops`. User-facing runtime is
+> **Hecate** (`hecate-social/hecate-*`). Kept for historical reference.
+
 ## 6. Implementation Phases
 
 ### Phase 1: Fork and Verify Build (Week 1)
